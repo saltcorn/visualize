@@ -1,0 +1,22 @@
+{
+  "name": "@saltcorn/visualize",
+  "version": "0.0.3",
+  "description": "Data visualization views plugin",
+  "main": "visualize.js",
+  "dependencies": {
+    "@saltcorn/markup": "^0.0.8",
+    "@saltcorn/data": "^0.0.8"
+  },
+  "author": "Tom Nielsen",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^25.1.0"
+  },
+  "repository": "github:saltcorn/visualize",
+  "jest": {
+    "testEnvironment": "node"
+  },
+  "scripts": {
+    "test": "jest"
+  }
+}
