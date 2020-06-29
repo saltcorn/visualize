@@ -115,13 +115,19 @@ const run = async (
   var layout = {
     title
   };
-  return div({ id: divid }) + script(domReady(plotly(divid, data, layout)));
+  return div({ id: divid }) + script(domReady(plotly(divid, factor_field, data, layout)));
 };
 
-const plotly = (id, ...args) =>
+const plotly = (id, factor, ...args) =>
   `Plotly.plot(document.getElementById("${id}"),${args
     .map(JSON.stringify)
-    .join()})`;
+    .join()});
+  document.getElementById("${id}").on('plotly_click', function(data){
+    if(data.points.length>0) {
+      console.log(data.points[0].label);
+      set_state_field("${factor}", data.points[0].label)
+    }
+  });`;
 
 const get_state_fields = async (table_id, viewname, { show_view }) => {
   const table_fields = await Field.find({ table_id });
