@@ -145,12 +145,20 @@ const run = async (
         ];
 
   var layout = {
-    title
+    title,
+    margin: title
+      ? { l: 50, pad: 4, t: 40, b: 30, r: 25 }
+      : { l: 50, pad: 4, t: 10, b: 30, r: 25 }
+  };
+  var config = {
+    displayModeBar: false
   };
   return (
     div({ id: divid }) +
     script(
-      domReady(plotly(divid, factor_field, state[factor_field], data, layout))
+      domReady(
+        plotly(divid, factor_field, state[factor_field], data, layout, config)
+      )
     )
   );
 };
