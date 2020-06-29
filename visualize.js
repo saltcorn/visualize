@@ -83,14 +83,15 @@ const run = async (
   const table = await Table.findOne({ id: table_id });
   const fields = await table.getFields()
   const divid = `plot${Math.round(100000*Math.random())}`
-  const outcome = outcome_field==="Row count" ? `COUNT(*)` : `SUM(${db.sqlsanitize(outcome_field)})`
+  const isCount=outcome_field==="Row count"
+  const outcome = isCount ? `COUNT(*)` : `SUM(${db.sqlsanitize(outcome_field)})`
   const sql = `select ${outcome}, ${db.sqlsanitize(factor_field)} from ${table.sql_name} group by ${db.sqlsanitize(factor_field)}`
   
   const {rows} = await db.query(sql)
   
   const data = [{
     type: "pie",
-    values: rows.map(r=>r.count),
+    values: rows.map(r=>isCount ? r.count: r.sum),
     labels: rows.map(r=>r[factor_field])
   }]
 
