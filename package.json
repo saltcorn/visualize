@@ -1,6 +1,6 @@
 {
   "name": "@saltcorn/visualize",
-  "version": "0.1",
+  "version": "0.1.0",
   "description": "Data visualization views plugin",
   "main": "visualize.js",
   "dependencies": {
@@ -18,5 +18,8 @@
   },
   "scripts": {
     "test": "jest"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
