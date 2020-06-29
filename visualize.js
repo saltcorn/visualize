@@ -36,8 +36,7 @@ const configuration_workflow = () =>
                 name: "outcome_field",
                 label: "Outcome",
                 type: "String",
-                sublabel:
-                  "Row count or field to sum up for total",
+                sublabel: "Row count or field to sum up for total",
                 required: true,
                 attributes: {
                   options: ["Row count", ...outcome_fields].join()
@@ -47,8 +46,7 @@ const configuration_workflow = () =>
                 name: "factor_field",
                 label: "Factor",
                 type: "String",
-                sublabel:
-                  "E.g the different wedges in a pie chart",
+                sublabel: "E.g the different wedges in a pie chart",
                 required: true,
                 attributes: {
                   options: factor_fields.join()
@@ -67,7 +65,7 @@ const configuration_workflow = () =>
                 name: "title",
                 label: "Plot title",
                 type: "String",
-                required: false                
+                required: false
               }
             ]
           });
@@ -78,38 +76,42 @@ const configuration_workflow = () =>
 const run = async (
   table_id,
   viewname,
-  {
-    outcome_field,
-    factor_field,
-    style,
-    title
-  },
+  { outcome_field, factor_field, style, title },
   state,
   extraArgs
 ) => {
   const table = await Table.findOne({ id: table_id });
-  const fields = await table.getFields()
-  const divid = `plot${Math.round(100000*Math.random())}`
-  const isCount=outcome_field==="Row count"
-  const outcome = isCount ? `COUNT(*)` : `SUM(${db.sqlsanitize(outcome_field)})`
-  const sql = `select ${outcome}, ${db.sqlsanitize(factor_field)} from ${table.sql_name} group by ${db.sqlsanitize(factor_field)}`
-  
-  const {rows} = await db.query(sql)
-  
-  const data = [{
-    type: "pie",
-    values: rows.map(r=>isCount ? r.count: r.sum),
-    labels: rows.map(r=>r[factor_field]),
-    hole: style==="Donut chart" ? 0.5: 0.0
-  }]
+  const fields = await table.getFields();
+  const divid = `plot${Math.round(100000 * Math.random())}`;
+  const isCount = outcome_field === "Row count";
+  const outcome = isCount
+    ? `COUNT(*)`
+    : `SUM(${db.sqlsanitize(outcome_field)})`;
+  const sql = `select ${outcome}, ${db.sqlsanitize(factor_field)} from ${
+    table.sql_name
+  } group by ${db.sqlsanitize(factor_field)}`;
+
+  const { rows } = await db.query(sql);
+
+  const data = [
+    {
+      type: "pie",
+      values: rows.map(r => (isCount ? r.count : r.sum)),
+      labels: rows.map(r => r[factor_field]),
+      hole: style === "Donut chart" ? 0.5 : 0.0
+    }
+  ];
 
   var layout = {
     title
   };
-  return div({id:divid})+script(domReady(plotly(divid, data, layout)))
-}
+  return div({ id: divid }) + script(domReady(plotly(divid, data, layout)));
+};
 
-const plotly=(id, ...args) => `Plotly.plot(document.getElementById("${id}"),${args.map(JSON.stringify).join()})`
+const plotly = (id, ...args) =>
+  `Plotly.plot(document.getElementById("${id}"),${args
+    .map(JSON.stringify)
+    .join()})`;
 
 const get_state_fields = async (table_id, viewname, { show_view }) => {
   const table_fields = await Field.find({ table_id });
@@ -119,7 +121,6 @@ const get_state_fields = async (table_id, viewname, { show_view }) => {
     return sf;
   });
 };
-
 
 module.exports = {
   headers: [
