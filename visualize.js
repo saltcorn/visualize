@@ -126,6 +126,7 @@ const run = async (
             type: "pie",
             labels: x,
             values: y,
+            pull: hasFactor ? rows.map(r => r[factor_field] ===state[factor_field] ? 0.1:0.0): undefined,
             hole: style === "Donut chart" ? 0.5 : 0.0
           }
         ];
