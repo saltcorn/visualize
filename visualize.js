@@ -92,15 +92,25 @@ const run = async (
   } group by ${db.sqlsanitize(factor_field)}`;
 
   const { rows } = await db.query(sql);
-
-  const data = [
-    {
-      type: "pie",
-      values: rows.map(r => (isCount ? r.count : r.sum)),
-      labels: rows.map(r => r[factor_field]),
-      hole: style === "Donut chart" ? 0.5 : 0.0
-    }
-  ];
+  const values = rows.map(r => (isCount ? r.count : r.sum));
+  const labels = rows.map(r => r[factor_field]);
+  const data =
+    style === "Bar chart"
+      ? [
+          {
+            type: "bar",
+            x: labels,
+            y: values
+          }
+        ]
+      : [
+          {
+            type: "pie",
+            labels,
+            values,
+            hole: style === "Donut chart" ? 0.5 : 0.0
+          }
+        ];
 
   var layout = {
     title
