@@ -1,6 +1,20 @@
 const Field = require("@saltcorn/data/models/field");
 const Table = require("@saltcorn/data/models/table");
 const Form = require("@saltcorn/data/models/form");
+const db = require("@saltcorn/data/db");
+const Workflow = require("@saltcorn/data/models/workflow");
+
+const {
+  text,
+  div,
+  h3,
+  style,
+  a,
+  script,
+  pre,
+  domReady,
+  i
+} = require("@saltcorn/markup/tags");
 
 const configuration_workflow = () =>
   new Workflow({
@@ -46,7 +60,7 @@ const configuration_workflow = () =>
                 type: "String",
                 required: true,
                 attributes: {
-                  options: "Pie,Donut,Bar chart"
+                  options: "Donut chart,Bar chart, Pie chart"
                 }
               }
             ]
@@ -55,6 +69,48 @@ const configuration_workflow = () =>
       }
     ]
   });
+const run = async (
+  table_id,
+  viewname,
+  {
+    outcome_field,
+    factor_field,
+    style
+  },
+  state,
+  extraArgs
+) => {
+  const table = await Table.findOne({ id: table_id });
+  const fields = await table.getFields()
+  const divid = `plot${Math.round(100000*Math.random())}`
+  const outcome = outcome_field==="Row count" ? `COUNT(*)` : `SUM(${db.sqlsanitize(outcome_field)})`
+  const sql = `select ${outcome}, ${db.sqlsanitize(factor_field)} from ${table.sql_name} group by ${db.sqlsanitize(factor_field)}`
+  
+  const {rows} = await db.query(sql)
+  
+  const data = [{
+    type: "pie",
+    values: rows.map(r=>r.count),
+    labels: rows.map(r=>r[factor_field])
+  }]
+
+  var layout = {
+    title: "A plot"
+  };
+  return div({id:divid})+script(domReady(plotly(divid, data, layout)))
+}
+
+const plotly=(id, ...args) => `Plotly.plot(document.getElementById("${id}"),${args.map(JSON.stringify).join()})`
+
+const get_state_fields = async (table_id, viewname, { show_view }) => {
+  const table_fields = await Field.find({ table_id });
+  return table_fields.map(f => {
+    const sf = new Field(f);
+    sf.required = false;
+    return sf;
+  });
+};
+
 
 module.exports = {
   headers: [
