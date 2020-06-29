@@ -72,7 +72,21 @@ const configuration_workflow = () =>
         }
       }
     ]
+  }); //http://localhost:3000/view/PIES?category=Fun
+
+const splitState = (factor, state) => {
+  var noFactor = [];
+  var hasFactor = false;
+  var hasNoFactor = false;
+  Object.entries(state).forEach(([k, v]) => {
+    if (k === factor) hasFactor = true;
+    else {
+      noFactor[k] = v;
+      hasNoFactor = true;
+    }
   });
+  return { noFactor, hasFactor, hasNoFactor };
+};
 const run = async (
   table_id,
   viewname,
@@ -84,30 +98,34 @@ const run = async (
   const fields = await table.getFields();
   const divid = `plot${Math.round(100000 * Math.random())}`;
   const isCount = outcome_field === "Row count";
+
+  const { noFactor, hasFactor } = splitState(factor_field, state);
+  const { where, values } = db.mkWhere(noFactor);
+
   const outcome = isCount
     ? `COUNT(*)`
     : `SUM(${db.sqlsanitize(outcome_field)})`;
   const sql = `select ${outcome}, ${db.sqlsanitize(factor_field)} from ${
     table.sql_name
-  } group by ${db.sqlsanitize(factor_field)}`;
+  } ${where} group by ${db.sqlsanitize(factor_field)}`;
 
-  const { rows } = await db.query(sql);
-  const values = rows.map(r => (isCount ? r.count : r.sum));
-  const labels = rows.map(r => r[factor_field]);
+  const { rows } = await db.query(sql, values);
+  const y = rows.map(r => (isCount ? r.count : r.sum));
+  const x = rows.map(r => r[factor_field]);
   const data =
     style === "Bar chart"
       ? [
           {
             type: "bar",
-            x: labels,
-            y: values
+            x,
+            y
           }
         ]
       : [
           {
             type: "pie",
-            labels,
-            values,
+            labels: x,
+            values: y,
             hole: style === "Donut chart" ? 0.5 : 0.0
           }
         ];
@@ -115,7 +133,10 @@ const run = async (
   var layout = {
     title
   };
-  return div({ id: divid }) + script(domReady(plotly(divid, factor_field, data, layout)));
+  return (
+    div({ id: divid }) +
+    script(domReady(plotly(divid, factor_field, data, layout)))
+  );
 };
 
 const plotly = (id, factor, ...args) =>
