@@ -118,7 +118,16 @@ const run = async (
           {
             type: "bar",
             x,
-            y
+            y,
+            marker: {
+              color: hasFactor
+                ? rows.map(r =>
+                    r[factor_field] === state[factor_field]
+                      ? "rgb(31, 119, 180)"
+                      : "rgb(150, 150, 150)"
+                  )
+                : "rgb(31, 119, 180)"
+            }
           }
         ]
       : [
@@ -126,7 +135,11 @@ const run = async (
             type: "pie",
             labels: x,
             values: y,
-            pull: hasFactor ? rows.map(r => r[factor_field] ===state[factor_field] ? 0.1:0.0): undefined,
+            pull: hasFactor
+              ? rows.map(r =>
+                  r[factor_field] === state[factor_field] ? 0.1 : 0.0
+                )
+              : undefined,
             hole: style === "Donut chart" ? 0.5 : 0.0
           }
         ];
@@ -136,18 +149,23 @@ const run = async (
   };
   return (
     div({ id: divid }) +
-    script(domReady(plotly(divid, factor_field, data, layout)))
+    script(
+      domReady(plotly(divid, factor_field, state[factor_field], data, layout))
+    )
   );
 };
 
-const plotly = (id, factor, ...args) =>
+const plotly = (id, factor, selected, ...args) =>
   `Plotly.plot(document.getElementById("${id}"),${args
     .map(JSON.stringify)
     .join()});
   document.getElementById("${id}").on('plotly_click', function(data){
     if(data.points.length>0) {
-      console.log(data.points[0].label);
-      set_state_field("${factor}", data.points[0].label)
+      var label = data.points[0].label
+      if(label=="${selected}") {
+        unset_state_field("${factor}");
+      } else
+        set_state_field("${factor}",label);
     }
   });`;
 
