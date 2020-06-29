@@ -62,6 +62,12 @@ const configuration_workflow = () =>
                 attributes: {
                   options: "Donut chart,Bar chart, Pie chart"
                 }
+              },
+              {
+                name: "title",
+                label: "Plot title",
+                type: "String",
+                required: false                
               }
             ]
           });
@@ -75,7 +81,8 @@ const run = async (
   {
     outcome_field,
     factor_field,
-    style
+    style,
+    title
   },
   state,
   extraArgs
@@ -92,11 +99,12 @@ const run = async (
   const data = [{
     type: "pie",
     values: rows.map(r=>isCount ? r.count: r.sum),
-    labels: rows.map(r=>r[factor_field])
+    labels: rows.map(r=>r[factor_field]),
+    hole: style==="Donut chart" ? 0.5: 0.0
   }]
 
   var layout = {
-    title: "A plot"
+    title
   };
   return div({id:divid})+script(domReady(plotly(divid, data, layout)))
 }
