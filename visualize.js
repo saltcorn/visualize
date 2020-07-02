@@ -28,7 +28,10 @@ const configuration_workflow = () =>
             .filter(f => ["Float", "Integer"].includes(f.type.name))
             .map(f => f.name);
           const factor_fields = fields
-            .filter(f => ["String", "Bool", "Integer"].includes(f.type.name))
+            .filter(
+              f =>
+                ["String", "Bool", "Integer"].includes(f.type.name) || f.is_fkey
+            )
             .map(f => f.name);
           return new Form({
             fields: [
@@ -98,16 +101,28 @@ const run = async (
   const fields = await table.getFields();
   const divid = `plot${Math.round(100000 * Math.random())}`;
   const isCount = outcome_field === "Row count";
-
+  const factor_field_field = fields.find(f => f.name === factor_field);
+  const isJoin = factor_field_field.type === "Key";
   const { noFactor, hasFactor } = splitState(factor_field, state);
   const { where, values } = db.mkWhere(noFactor);
-
+  const joinTable = isJoin
+    ? db.sqlsanitize(factor_field_field.reftable_name)
+    : "";
+  const join = isJoin
+    ? `join "${joinTable}" j on j.id="${db.sqlsanitize(factor_field)}"`
+    : "";
+  const the_factor = isJoin
+    ? `j."${db.sqlsanitize(
+        factor_field_field.attributes.summary_field || "id"
+      )}"`
+    : `"${db.sqlsanitize(factor_field)}"`;
   const outcome = isCount
     ? `COUNT(*)`
-    : `SUM(${db.sqlsanitize(outcome_field)})`;
-  const sql = `select ${outcome}, ${db.sqlsanitize(factor_field)} from ${
-    table.sql_name
-  } ${where} group by ${db.sqlsanitize(factor_field)}`;
+    : `SUM("${db.sqlsanitize(outcome_field)}")`;
+  const tail = `${where} group by ${the_factor}`;
+  const sql = `select ${outcome}, ${the_factor} as "${db.sqlsanitize(
+    factor_field
+  )}" from ${table.sql_name} ${join} ${tail}`;
 
   const { rows } = await db.query(sql, values);
   const y = rows.map(r => (isCount ? r.count : r.sum));
