@@ -119,14 +119,18 @@ const run = async (
   const outcome = isCount
     ? `COUNT(*)`
     : `SUM("${db.sqlsanitize(outcome_field)}")`;
-  const tail = `${where} group by ${the_factor}`;
+  
+  const selJoin = isJoin? `, "${factor_field}" as fkey`: ''
+  const groupBy = isJoin? `"${db.sqlsanitize(factor_field)}", ${the_factor}`: `"${db.sqlsanitize(factor_field)}"`
+  const tail = `${where} group by ${groupBy}`;
   const sql = `select ${outcome}, ${the_factor} as "${db.sqlsanitize(
     factor_field
-  )}" from ${table.sql_name} ${join} ${tail}`;
+  )}"${selJoin} from ${table.sql_name} ${join} ${tail}`;
 
   const { rows } = await db.query(sql, values);
   const y = rows.map(r => (isCount ? r.count : r.sum));
   const x = rows.map(r => r[factor_field]);
+  const customdata=isJoin? rows.map(r => r.fkey): undefined
   const data =
     style === "Bar chart"
       ? [
@@ -134,10 +138,11 @@ const run = async (
             type: "bar",
             x,
             y,
+            customdata,
             marker: {
               color: hasFactor
                 ? rows.map(r =>
-                    r[factor_field] === state[factor_field]
+                    (isJoin ? `${r.fkey}` : r[factor_field]) === state[factor_field]
                       ? "rgb(31, 119, 180)"
                       : "rgb(150, 150, 150)"
                   )
@@ -150,9 +155,10 @@ const run = async (
             type: "pie",
             labels: x,
             values: y,
+            customdata,
             pull: hasFactor
               ? rows.map(r =>
-                  r[factor_field] === state[factor_field] ? 0.1 : 0.0
+                (isJoin ? `${r.fkey}` : r[factor_field]) === state[factor_field] ? 0.1 : 0.0
                 )
               : undefined,
             hole: style === "Donut chart" ? 0.5 : 0.0
@@ -172,19 +178,20 @@ const run = async (
     div({ id: divid }) +
     script(
       domReady(
-        plotly(divid, factor_field, state[factor_field], data, layout, config)
+        plotly(divid, factor_field, state[factor_field], isJoin,  data, layout, config)
       )
     )
   );
 };
 
-const plotly = (id, factor, selected, ...args) =>
+const plotly = (id, factor, selected, isJoin, ...args) =>
   `Plotly.plot(document.getElementById("${id}"),${args
     .map(JSON.stringify)
     .join()});
   document.getElementById("${id}").on('plotly_click', function(data){
     if(data.points.length>0) {
-      var label = data.points[0].label
+      var label = ${isJoin? 'data.points[0].customdata[0]' :'data.points[0].label'};
+      console.log(data.points[0]);
       if(label=="${selected}") {
         unset_state_field("${factor}");
       } else
