@@ -197,7 +197,8 @@ const run = async (
       : { l: 50, pad: 4, t: 10, b: 30, r: 25 }
   };
   var config = {
-    displayModeBar: false
+    displayModeBar: false,
+    responsive: true
   };
   return (
     div({ id: divid }) +
