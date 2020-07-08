@@ -78,6 +78,13 @@ const configuration_workflow = () =>
                 label: "Plot title",
                 type: "String",
                 required: false
+              },
+              {
+                name: "height",
+                label: "Height",
+                type: "Integer",
+                required: true,
+                default: 450
               }
             ]
           });
@@ -102,7 +109,7 @@ const splitState = (factor, state) => {
 const run = async (
   table_id,
   viewname,
-  { outcome_field, factor_field, style, title, label_position = "Legend" },
+  { outcome_field, factor_field, style, title, label_position = "Legend", height = 450 },
   state,
   extraArgs
 ) => {
@@ -192,6 +199,7 @@ const run = async (
   var layout = {
     title,
     showlegend: label_position === "Legend",
+    height: +height,
     margin: title
       ? { l: 50, pad: 4, t: 40, b: 30, r: 25 }
       : { l: 50, pad: 4, t: 10, b: 30, r: 25 }
