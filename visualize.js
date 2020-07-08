@@ -65,6 +65,15 @@ const configuration_workflow = () =>
                 }
               },
               {
+                name: "label_position",
+                label: "Label Position",
+                type: "String",
+                required: true,
+                attributes: {
+                  options: "Legend,Inside,Outside"
+                }
+              },
+              {
                 name: "title",
                 label: "Plot title",
                 type: "String",
@@ -93,7 +102,7 @@ const splitState = (factor, state) => {
 const run = async (
   table_id,
   viewname,
-  { outcome_field, factor_field, style, title },
+  { outcome_field, factor_field, style, title, label_position = "Legend" },
   state,
   extraArgs
 ) => {
@@ -109,7 +118,9 @@ const run = async (
     ? db.sqlsanitize(factor_field_field.reftable_name)
     : "";
   const join = isJoin
-    ? `join "${db.getTenantSchema()}"."${joinTable}" j on j.id="${db.sqlsanitize(factor_field)}"`
+    ? `join "${db.getTenantSchema()}"."${joinTable}" j on j.id="${db.sqlsanitize(
+        factor_field
+      )}"`
     : "";
   const the_factor = isJoin
     ? `j."${db.sqlsanitize(
@@ -119,9 +130,11 @@ const run = async (
   const outcome = isCount
     ? `COUNT(*)`
     : `SUM("${db.sqlsanitize(outcome_field)}")`;
-  
-  const selJoin = isJoin? `, "${factor_field}" as fkey`: ''
-  const groupBy = isJoin? `"${db.sqlsanitize(factor_field)}", ${the_factor}`: `"${db.sqlsanitize(factor_field)}"`
+
+  const selJoin = isJoin ? `, "${factor_field}" as fkey` : "";
+  const groupBy = isJoin
+    ? `"${db.sqlsanitize(factor_field)}", ${the_factor}`
+    : `"${db.sqlsanitize(factor_field)}"`;
   const tail = `${where} group by ${groupBy}`;
   const sql = `select ${outcome}, ${the_factor} as "${db.sqlsanitize(
     factor_field
@@ -130,7 +143,7 @@ const run = async (
   const { rows } = await db.query(sql, values);
   const y = rows.map(r => (isCount ? r.count : r.sum));
   const x = rows.map(r => r[factor_field]);
-  const customdata=isJoin? rows.map(r => r.fkey): undefined
+  const customdata = isJoin ? rows.map(r => r.fkey) : undefined;
   const data =
     style === "Bar chart"
       ? [
@@ -142,7 +155,8 @@ const run = async (
             marker: {
               color: hasFactor
                 ? rows.map(r =>
-                    (isJoin ? `${r.fkey}` : r[factor_field]) === state[factor_field]
+                    (isJoin ? `${r.fkey}` : r[factor_field]) ===
+                    state[factor_field]
                       ? "rgb(31, 119, 180)"
                       : "rgb(150, 150, 150)"
                   )
@@ -156,9 +170,19 @@ const run = async (
             labels: x,
             values: y,
             customdata,
+            textinfo: label_position === "Legend" ? "percent" : "label+percent",
+            textposition:
+              label_position === "Legend"
+                ? undefined
+                : label_position === "Outside"
+                ? "outside"
+                : "inside",
             pull: hasFactor
               ? rows.map(r =>
-                (isJoin ? `${r.fkey}` : r[factor_field]) === state[factor_field] ? 0.1 : 0.0
+                  (isJoin ? `${r.fkey}` : r[factor_field]) ===
+                  state[factor_field]
+                    ? 0.1
+                    : 0.0
                 )
               : undefined,
             hole: style === "Donut chart" ? 0.5 : 0.0
@@ -167,6 +191,7 @@ const run = async (
 
   var layout = {
     title,
+    showlegend: label_position === "Legend",
     margin: title
       ? { l: 50, pad: 4, t: 40, b: 30, r: 25 }
       : { l: 50, pad: 4, t: 10, b: 30, r: 25 }
@@ -178,7 +203,15 @@ const run = async (
     div({ id: divid }) +
     script(
       domReady(
-        plotly(divid, factor_field, state[factor_field], isJoin,  data, layout, config)
+        plotly(
+          divid,
+          factor_field,
+          state[factor_field],
+          isJoin,
+          data,
+          layout,
+          config
+        )
       )
     )
   );
@@ -190,7 +223,9 @@ const plotly = (id, factor, selected, isJoin, ...args) =>
     .join()});
   document.getElementById("${id}").on('plotly_click', function(data){
     if(data.points.length>0) {
-      var label = ${isJoin? 'data.points[0].customdata[0]' :'data.points[0].label'};
+      var label = ${
+        isJoin ? "data.points[0].customdata[0]" : "data.points[0].label"
+      };
       console.log(data.points[0]);
       if(label=="${selected}") {
         unset_state_field("${factor}");
