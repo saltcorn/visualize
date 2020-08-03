@@ -125,7 +125,7 @@ const run = async (
     ? db.sqlsanitize(factor_field_field.reftable_name)
     : "";
   const join = isJoin
-    ? `join "${db.getTenantSchema()}"."${joinTable}" j on j.id="${db.sqlsanitize(
+    ? `join ${db.getTenantSchemaPrefix()}"${joinTable}" j on j.id="${db.sqlsanitize(
         factor_field
       )}"`
     : "";
