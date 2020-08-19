@@ -109,7 +109,14 @@ const splitState = (factor, state) => {
 const run = async (
   table_id,
   viewname,
-  { outcome_field, factor_field, style, title, label_position = "Legend", height = 450 },
+  {
+    outcome_field,
+    factor_field,
+    style,
+    title,
+    label_position = "Legend",
+    height = 450
+  },
   state,
   extraArgs
 ) => {
@@ -147,7 +154,26 @@ const run = async (
     factor_field
   )}"${selJoin} from ${table.sql_name} ${join} ${tail}`;
 
-  const { rows } = await db.query(sql, values);
+  const rows_db = (await db.query(sql, values)).rows;
+  var rows;
+  db.sql_log("setting by options", {
+    factor_field,
+    attr: factor_field_field.attributes
+  });
+  if (
+    !isJoin &&
+    factor_field_field.attributes &&
+    factor_field_field.attributes.options
+  ) {
+    var colOpts = factor_field_field.attributes.options
+      .split(",")
+      .map(s => s.trim());
+    rows = colOpts.map(factor => {
+      const rowdb = rows_db.find(row => row[factor_field] == factor);
+      if (rowdb) return rowdb;
+      else return { [factor_field]: factor, [isCount ? "count" : "sum"]: 0 };
+    });
+  } else rows = rows_db;
   const y = rows.map(r => (isCount ? r.count : r.sum));
   const x = rows.map(r => r[factor_field]);
   const customdata = isJoin ? rows.map(r => r.fkey) : undefined;
