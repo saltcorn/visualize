@@ -13,7 +13,7 @@ const {
   script,
   pre,
   domReady,
-  i
+  i,
 } = require("@saltcorn/markup/tags");
 
 const configuration_workflow = () =>
@@ -21,18 +21,18 @@ const configuration_workflow = () =>
     steps: [
       {
         name: "views",
-        form: async context => {
+        form: async (context) => {
           const table = await Table.findOne({ id: context.table_id });
           const fields = await table.getFields();
           const outcome_fields = fields
-            .filter(f => ["Float", "Integer"].includes(f.type.name))
-            .map(f => f.name);
+            .filter((f) => ["Float", "Integer"].includes(f.type.name))
+            .map((f) => f.name);
           const factor_fields = fields
             .filter(
-              f =>
+              (f) =>
                 ["String", "Bool", "Integer"].includes(f.type.name) || f.is_fkey
             )
-            .map(f => f.name);
+            .map((f) => f.name);
           return new Form({
             fields: [
               {
@@ -42,8 +42,8 @@ const configuration_workflow = () =>
                 sublabel: "Row count or field to sum up for total",
                 required: true,
                 attributes: {
-                  options: ["Row count", ...outcome_fields].join()
-                }
+                  options: ["Row count", ...outcome_fields].join(),
+                },
               },
               {
                 name: "factor_field",
@@ -52,8 +52,14 @@ const configuration_workflow = () =>
                 sublabel: "E.g the different wedges in a pie chart",
                 required: true,
                 attributes: {
-                  options: factor_fields.join()
-                }
+                  options: factor_fields.join(),
+                },
+              },
+              {
+                name: "null_label",
+                label: "Label for missing factor values",
+                type: "String",
+                required: false,
               },
               {
                 name: "style",
@@ -61,8 +67,8 @@ const configuration_workflow = () =>
                 type: "String",
                 required: true,
                 attributes: {
-                  options: "Donut chart,Bar chart, Pie chart"
-                }
+                  options: "Donut chart,Bar chart, Pie chart",
+                },
               },
               {
                 name: "label_position",
@@ -70,27 +76,27 @@ const configuration_workflow = () =>
                 type: "String",
                 required: true,
                 attributes: {
-                  options: "Legend,Inside,Outside"
-                }
+                  options: "Legend,Inside,Outside",
+                },
               },
               {
                 name: "title",
                 label: "Plot title",
                 type: "String",
-                required: false
+                required: false,
               },
               {
                 name: "height",
                 label: "Height",
                 type: "Integer",
                 required: true,
-                default: 450
-              }
-            ]
+                default: 450,
+              },
+            ],
           });
-        }
-      }
-    ]
+        },
+      },
+    ],
   }); //http://localhost:3000/view/PIES?category=Fun
 
 const splitState = (factor, state) => {
@@ -114,8 +120,9 @@ const run = async (
     factor_field,
     style,
     title,
+    null_label,
     label_position = "Legend",
-    height = 450
+    height = 450,
   },
   state,
   extraArgs
@@ -124,7 +131,7 @@ const run = async (
   const fields = await table.getFields();
   const divid = `plot${Math.round(100000 * Math.random())}`;
   const isCount = outcome_field === "Row count";
-  const factor_field_field = fields.find(f => f.name === factor_field);
+  const factor_field_field = fields.find((f) => f.name === factor_field);
   const isJoin = factor_field_field.type === "Key";
   const { noFactor, hasFactor } = splitState(factor_field, state);
   const { where, values } = db.mkWhere(noFactor);
@@ -132,7 +139,7 @@ const run = async (
     ? db.sqlsanitize(factor_field_field.reftable_name)
     : "";
   const join = isJoin
-    ? `join ${db.getTenantSchemaPrefix()}"${joinTable}" j on j.id="${db.sqlsanitize(
+    ? `left join ${db.getTenantSchemaPrefix()}"${joinTable}" j on j.id="${db.sqlsanitize(
         factor_field
       )}"`
     : "";
@@ -156,10 +163,6 @@ const run = async (
 
   const rows_db = (await db.query(sql, values)).rows;
   var rows;
-  db.sql_log("setting by options", {
-    factor_field,
-    attr: factor_field_field.attributes
-  });
   if (
     !isJoin &&
     factor_field_field.attributes &&
@@ -167,16 +170,20 @@ const run = async (
   ) {
     var colOpts = factor_field_field.attributes.options
       .split(",")
-      .map(s => s.trim());
-    rows = colOpts.map(factor => {
-      const rowdb = rows_db.find(row => row[factor_field] == factor);
+      .map((s) => s.trim());
+    rows = colOpts.map((factor) => {
+      const rowdb = rows_db.find((row) => row[factor_field] == factor);
       if (rowdb) return rowdb;
       else return { [factor_field]: factor, [isCount ? "count" : "sum"]: 0 };
     });
   } else rows = rows_db;
-  const y = rows.map(r => (isCount ? r.count : r.sum));
-  const x = rows.map(r => r[factor_field]);
-  const customdata = isJoin ? rows.map(r => r.fkey) : undefined;
+  const y = rows.map((r) => (isCount ? r.count : r.sum));
+  const x = rows.map((r) => {
+    const v = r[factor_field];
+    if (v === null && null_label) return null_label;
+    else return v;
+  });
+  const customdata = isJoin ? rows.map((r) => r.fkey) : undefined;
   const data =
     style === "Bar chart"
       ? [
@@ -187,15 +194,15 @@ const run = async (
             customdata,
             marker: {
               color: hasFactor
-                ? rows.map(r =>
+                ? rows.map((r) =>
                     (isJoin ? `${r.fkey}` : r[factor_field]) ===
                     state[factor_field]
                       ? "rgb(31, 119, 180)"
                       : "rgb(150, 150, 150)"
                   )
-                : "rgb(31, 119, 180)"
-            }
-          }
+                : "rgb(31, 119, 180)",
+            },
+          },
         ]
       : [
           {
@@ -211,15 +218,15 @@ const run = async (
                 ? "outside"
                 : "inside",
             pull: hasFactor
-              ? rows.map(r =>
+              ? rows.map((r) =>
                   (isJoin ? `${r.fkey}` : r[factor_field]) ===
                   state[factor_field]
                     ? 0.1
                     : 0.0
                 )
               : undefined,
-            hole: style === "Donut chart" ? 0.5 : 0.0
-          }
+            hole: style === "Donut chart" ? 0.5 : 0.0,
+          },
         ];
 
   var layout = {
@@ -228,11 +235,11 @@ const run = async (
     height: +height,
     margin: title
       ? { l: 50, pad: 4, t: 40, b: 30, r: 25 }
-      : { l: 50, pad: 4, t: 10, b: 30, r: 25 }
+      : { l: 50, pad: 4, t: 10, b: 30, r: 25 },
   };
   var config = {
     displayModeBar: false,
-    responsive: true
+    responsive: true,
   };
   return (
     div({ id: divid }) +
@@ -271,7 +278,7 @@ const plotly = (id, factor, selected, isJoin, ...args) =>
 
 const get_state_fields = async (table_id, viewname, { show_view }) => {
   const table_fields = await Field.find({ table_id });
-  return table_fields.map(f => {
+  return table_fields.map((f) => {
     const sf = new Field(f);
     sf.required = false;
     return sf;
@@ -283,8 +290,8 @@ module.exports = {
     {
       script:
         "https://cdnjs.cloudflare.com/ajax/libs/plotly.js/1.54.5/plotly.min.js",
-      integrity: "sha256-qXgZ3jy1txdNZG0Lv20X3u5yh4892KqFcfF1SaOW0gI="
-    }
+      integrity: "sha256-qXgZ3jy1txdNZG0Lv20X3u5yh4892KqFcfF1SaOW0gI=",
+    },
   ],
   sc_plugin_api_version: 1,
   viewtemplates: [
@@ -293,7 +300,7 @@ module.exports = {
       display_state_form: false,
       get_state_fields,
       configuration_workflow,
-      run
-    }
-  ]
+      run,
+    },
+  ],
 };
