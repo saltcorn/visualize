@@ -112,6 +112,18 @@ const splitState = (factor, state) => {
   });
   return { noFactor, hasFactor, hasNoFactor };
 };
+
+const readState = (state, fields) => {
+  fields.forEach((f) => {
+    const current = state[f.name];
+    if (typeof current !== "undefined") {
+      if (f.type.read) state[f.name] = f.type.read(current);
+      else if (f.type === "Key")
+        state[f.name] = current === "null" ? null : +current;
+    }
+  });
+  return state;
+};
 const run = async (
   table_id,
   viewname,
@@ -129,6 +141,7 @@ const run = async (
 ) => {
   const table = await Table.findOne({ id: table_id });
   const fields = await table.getFields();
+  readState(state, fields);
   const divid = `plot${Math.round(100000 * Math.random())}`;
   const isCount = outcome_field === "Row count";
   const factor_field_field = fields.find((f) => f.name === factor_field);
@@ -268,8 +281,7 @@ const plotly = (id, factor, selected, isJoin, ...args) =>
       var label = ${
         isJoin ? "data.points[0].customdata[0]" : "data.points[0].label"
       };
-      console.log(data.points[0]);
-      if(label=="${selected}") {
+      if(label===${selected ? JSON.stringify(selected) : selected}) {
         unset_state_field("${factor}");
       } else
         set_state_field("${factor}",label);
