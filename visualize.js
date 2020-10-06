@@ -99,15 +99,18 @@ const configuration_workflow = () =>
     ],
   }); //http://localhost:3000/view/PIES?category=Fun
 
-const splitState = (factor, state) => {
+const splitState = (factor, state, fields) => {
   var noFactor = [];
   var hasFactor = false;
   var hasNoFactor = false;
   Object.entries(state).forEach(([k, v]) => {
     if (k === factor) hasFactor = true;
     else {
-      noFactor[k] = v;
-      hasNoFactor = true;
+      const field = fields.find((f) => f.name == k);
+      if (field) {
+        noFactor[k] = v;
+        hasNoFactor = true;
+      }
     }
   });
   return { noFactor, hasFactor, hasNoFactor };
@@ -146,7 +149,7 @@ const run = async (
   const isCount = outcome_field === "Row count";
   const factor_field_field = fields.find((f) => f.name === factor_field);
   const isJoin = factor_field_field.type === "Key";
-  const { noFactor, hasFactor } = splitState(factor_field, state);
+  const { noFactor, hasFactor } = splitState(factor_field, state, fields);
   const { where, values } = db.mkWhere(noFactor);
   const joinTable = isJoin
     ? db.sqlsanitize(factor_field_field.reftable_name)
@@ -232,8 +235,7 @@ const run = async (
                 : "inside",
             pull: hasFactor
               ? rows.map((r) =>
-                  (isJoin ? `${r.fkey}` : r[factor_field]) ===
-                  state[factor_field]
+                  (isJoin ? r.fkey : r[factor_field]) === state[factor_field]
                     ? 0.1
                     : 0.0
                 )
