@@ -148,6 +148,10 @@ const run = async (
   const divid = `plot${Math.round(100000 * Math.random())}`;
   const isCount = outcome_field === "Row count";
   const factor_field_field = fields.find((f) => f.name === factor_field);
+  if (!factor_field_field)
+    throw new Error(
+      `visualize incorrectly configured: factor field "${factor_field}" is not a valid field.`
+    );
   const isJoin = factor_field_field.type === "Key";
   const { noFactor, hasFactor } = splitState(factor_field, state, fields);
   const { where, values } = db.mkWhere(noFactor);
