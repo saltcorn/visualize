@@ -5,6 +5,7 @@ const db = require("@saltcorn/data/db");
 const Workflow = require("@saltcorn/data/models/workflow");
 
 const { div, script, domReady } = require("@saltcorn/markup/tags");
+const { get_state_fields, readState } = require("./utils");
 
 const configuration_workflow = () =>
   new Workflow({
@@ -106,17 +107,6 @@ const splitState = (factor, state, fields) => {
   return { noFactor, hasFactor, hasNoFactor };
 };
 
-const readState = (state, fields) => {
-  fields.forEach((f) => {
-    const current = state[f.name];
-    if (typeof current !== "undefined") {
-      if (f.type.read) state[f.name] = f.type.read(current);
-      else if (f.type === "Key")
-        state[f.name] = current === "null" ? null : +current;
-    }
-  });
-  return state;
-};
 const run = async (
   table_id,
   viewname,
@@ -283,15 +273,6 @@ const plotly = (id, factor, selected, isJoin, ...args) =>
         set_state_field("${factor}",label);
     }
   });`;
-
-const get_state_fields = async (table_id, viewname, { show_view }) => {
-  const table_fields = await Field.find({ table_id });
-  return table_fields.map((f) => {
-    const sf = new Field(f);
-    sf.required = false;
-    return sf;
-  });
-};
 
 module.exports = {
   name: "ProportionsVis",

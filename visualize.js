@@ -7,5 +7,5 @@ module.exports = {
     },
   ],
   sc_plugin_api_version: 1,
-  viewtemplates: [require("./proportions")],
+  viewtemplates: [require("./proportions"), require("./scatter")],
 };

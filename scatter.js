@@ -1,0 +1,132 @@
+const Field = require("@saltcorn/data/models/field");
+const Table = require("@saltcorn/data/models/table");
+const Form = require("@saltcorn/data/models/form");
+const db = require("@saltcorn/data/db");
+const Workflow = require("@saltcorn/data/models/workflow");
+
+const { div, script, domReady } = require("@saltcorn/markup/tags");
+const { stateFieldsToWhere } = require("@saltcorn/data/plugin-helper");
+const { get_state_fields, readState } = require("./utils");
+
+const configuration_workflow = () =>
+  new Workflow({
+    steps: [
+      {
+        name: "views",
+        form: async (context) => {
+          const table = await Table.findOne({ id: context.table_id });
+          const fields = await table.getFields();
+          const x_fields = fields
+            .filter((f) => ["Date", "Float", "Integer"].includes(f.type.name))
+            .map((f) => f.name);
+          const y_fields = fields
+            .filter((f) => ["Date", "Float", "Integer"].includes(f.type.name))
+            .map((f) => f.name);
+          return new Form({
+            fields: [
+              {
+                name: "x_field",
+                label: "X axis field",
+                type: "String",
+                required: true,
+                attributes: {
+                  options: x_fields.join(),
+                },
+              },
+              {
+                name: "y_field",
+                label: "Y axis field",
+                type: "String",
+                required: true,
+                attributes: {
+                  options: y_fields.join(),
+                },
+              },
+              {
+                name: "style",
+                label: "Style",
+                type: "String",
+                required: true,
+                attributes: {
+                  options: "lines, markers, lines+markers",
+                },
+              },
+              {
+                name: "title",
+                label: "Plot title",
+                type: "String",
+                required: false,
+              },
+              {
+                name: "height",
+                label: "Height",
+                type: "Integer",
+                required: true,
+                default: 450,
+              },
+            ],
+          });
+        },
+      },
+    ],
+  });
+
+const run = async (
+  table_id,
+  viewname,
+  { x_field, y_field, style, title, height },
+  state,
+  extraArgs
+) => {
+  const table = await Table.findOne({ id: table_id });
+  const fields = await table.getFields();
+  readState(state, fields);
+  const divid = `plot${Math.round(100000 * Math.random())}`;
+  const xfld = fields.find((f) => f.name === x_field);
+  const yfld = fields.find((f) => f.name === y_field);
+  const where = await stateFieldsToWhere({ fields, state });
+  const rows = await table.getRows(where);
+  const y = rows.map((r) => r[yfld.name]);
+  const x = rows.map((r) => r[xfld.name]);
+  const data = [
+    {
+      type: "scatter",
+      mode: style,
+      x,
+      y,
+    },
+  ];
+  var config = {
+    displayModeBar: false,
+    responsive: true,
+  };
+  var layout = {
+    title,
+    showlegend: false,
+    height: +height,
+    margin: title
+      ? { l: 50, pad: 4, t: 40, b: 30, r: 25 }
+      : { l: 50, pad: 4, t: 10, b: 30, r: 25 },
+    xaxis: { title: fieldToLabel(xfld) },
+    yaxis: { title: fieldToLabel(yfld) },
+  };
+  return (
+    div({ id: divid }) + script(domReady(plotly(divid, data, layout, config)))
+  );
+};
+const fieldToLabel = (fld) =>
+  fld.attributes && fld.attributes.units
+    ? `${fld.label} [${fld.attributes.units}]`
+    : fld.label;
+const plotly = (id, ...args) =>
+  `Plotly.plot(document.getElementById("${id}"),${args
+    .map(JSON.stringify)
+    .join()});`;
+
+module.exports = {
+  name: "RelationsVis",
+  display_state_form: false,
+  get_state_fields,
+  configuration_workflow,
+  run,
+};
