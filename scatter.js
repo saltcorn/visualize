@@ -85,7 +85,7 @@ const run = async (
   const xfld = fields.find((f) => f.name === x_field);
   const yfld = fields.find((f) => f.name === y_field);
   const where = await stateFieldsToWhere({ fields, state });
-  const rows = await table.getRows(where);
+  const rows = await table.getRows(where, { orderBy: x_field });
   const y = rows.map((r) => r[yfld.name]);
   const x = rows.map((r) => r[xfld.name]);
   const data = [
