@@ -1,3 +1,5 @@
+const Field = require("@saltcorn/data/models/field");
+
 const get_state_fields = async (table_id, viewname, { show_view }) => {
   const table_fields = await Field.find({ table_id });
   return table_fields.map((f) => {

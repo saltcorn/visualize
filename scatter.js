@@ -126,6 +126,8 @@ const plotly = (id, ...args) =>
 module.exports = {
   name: "RelationsVis",
   display_state_form: false,
+  description:
+    "Visualise the relationship between two fields as a line or scatter plot",
   get_state_fields,
   configuration_workflow,
   run,

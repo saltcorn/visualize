@@ -276,6 +276,8 @@ const plotly = (id, factor, selected, isJoin, ...args) =>
 
 module.exports = {
   name: "ProportionsVis",
+  description:
+    "Visualise proportions in a table with a bar, pie or doughnut chart",
   display_state_form: false,
   get_state_fields,
   configuration_workflow,
