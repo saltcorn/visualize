@@ -10,6 +10,7 @@ const configuration_workflow = () =>
     steps: [],
   });
 const getForm = async ({ viewname }) => {
+  db.sql_log("get form");
   const tables = await Table.find({});
   const axisOptions = {};
   for (const t of tables) {
@@ -56,10 +57,19 @@ const run = async (table_id, viewname, cfg, state, { res, req }) => {
   const form = await getForm({ viewname });
   return renderForm(form, req.csrfToken());
 };
-const runPost = async (table_id, viewname, config, state, body, { req }) => {
+const runPost = async (
+  table_id,
+  viewname,
+  config,
+  state,
+  body,
+  { req, res }
+) => {
   const form = await getForm({ viewname });
   form.validate(body);
-  return renderForm(form, req.csrfToken());
+  db.sql_log("send form");
+
+  res.sendWrap("Data explorer", renderForm(form, req.csrfToken()));
 };
 module.exports = {
   name: "Data Explorer",
