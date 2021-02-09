@@ -11,6 +11,13 @@ const configuration_workflow = () =>
   });
 const getForm = async ({ viewname }) => {
   const tables = await Table.find({});
+  const axisOptions = {};
+  for (const t of tables) {
+    const flds = await t.getFields();
+    axisOptions[t.name] = flds
+      .filter((f) => ["Float", "Integer", "Date"].includes(f.type.name))
+      .map((f) => f.name);
+  }
   const form = new Form({
     action: `/view/${viewname}`,
     fields: [
@@ -21,6 +28,24 @@ const getForm = async ({ viewname }) => {
         required: true,
         attributes: {
           options: tables.map((t) => t.name).join(),
+        },
+      },
+      {
+        name: "x_field",
+        label: "X axis field",
+        type: "String",
+        required: true,
+        attributes: {
+          calcOptions: ["table", axisOptions],
+        },
+      },
+      {
+        name: "y_field",
+        label: "Y axis field",
+        type: "String",
+        required: true,
+        attributes: {
+          calcOptions: ["table", axisOptions],
         },
       },
     ],
