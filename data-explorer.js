@@ -10,7 +10,6 @@ const configuration_workflow = () =>
     steps: [],
   });
 const getForm = async ({ viewname }) => {
-  db.sql_log("get form");
   const tables = await Table.find({});
   const axisOptions = {};
   for (const t of tables) {
@@ -67,7 +66,6 @@ const runPost = async (
 ) => {
   const form = await getForm({ viewname });
   form.validate(body);
-  db.sql_log("send form");
 
   res.sendWrap("Data explorer", renderForm(form, req.csrfToken()));
 };
