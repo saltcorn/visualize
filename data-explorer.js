@@ -121,7 +121,6 @@ const runPost = async (
 };
 
 const save_as_view = async (table_id, viewname, config, body, { req }) => {
-  db.sql_log({ body });
   const form = await getForm({ viewname, body });
   form.validate(body);
   if (!form.hasErrors) {
