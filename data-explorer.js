@@ -21,7 +21,10 @@ const getForm = async ({ viewname, body }) => {
       type: "String",
       required: true,
       attributes: {
-        options: tables.map((t) => t.name),
+        options: [
+          { name: "", label: "Select table...", disabled: true },
+          ...tables.map((t) => t.name),
+        ],
       },
     },
     {
@@ -30,7 +33,11 @@ const getForm = async ({ viewname, body }) => {
       type: "String",
       required: true,
       attributes: {
-        options: ["Proportion", "Relation"],
+        options: [
+          { name: "", label: "Select plot type...", disabled: true },
+          "Proportion",
+          "Relation",
+        ],
       },
     },
   ];
@@ -38,11 +45,11 @@ const getForm = async ({ viewname, body }) => {
     const table = await Table.findOne({ name: db.sqlsanitize(body.table) });
     switch (body.plottype) {
       case "Proportion":
-        const propForm = await proportionsForm(table);
+        const propForm = await proportionsForm(table, true);
         fields.push(...propForm.fields);
         break;
       case "Relation":
-        const scatForm = await scatterForm(table);
+        const scatForm = await scatterForm(table, true);
         fields.push(...scatForm.fields);
         break;
     }
@@ -62,13 +69,13 @@ const getForm = async ({ viewname, body }) => {
   });
   return form;
 };
-
+JSON.stringify;
 const js = (viewname) =>
   script(`
 function save_as_view(that) {
-  const form = $(that).parent('form');
-  console.log(form);
-  view_post("${viewname}", "save_as_view", form.serialize())
+  const form = $(that).closest('form');
+  console.log(form, form.serializeArray());
+  view_post("${viewname}", "save_as_view", $(form).serialize())
 }
 `);
 const run = async (table_id, viewname, cfg, state, { res, req }) => {
@@ -100,11 +107,20 @@ const runPost = async (
         break;
     }
   }
+  form.hasErrors=false
+  form.errors={}
   res.sendWrap("Data explorer", [
     renderForm(form, req.csrfToken()),
     js(viewname),
     plot,
   ]);
+};
+
+const save_as_view = async (table_id, viewname, config, body, { req }) => {
+  db.sql_log({ body });
+  const form = await getForm({ viewname, body });
+  form.validate(body);
+  return { json: { success: "ok" } };
 };
 module.exports = {
   name: "Data Explorer",
@@ -115,4 +131,5 @@ module.exports = {
   configuration_workflow,
   run,
   runPost,
+  routes: { save_as_view },
 };

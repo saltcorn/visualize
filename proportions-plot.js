@@ -4,7 +4,7 @@ const db = require("@saltcorn/data/db");
 const { div, script, domReady } = require("@saltcorn/markup/tags");
 const { get_state_fields, readState } = require("./utils");
 
-const proportionsForm = async (table) => {
+const proportionsForm = async (table, autosave) => {
   const fields = await table.getFields();
   const outcome_fields = fields
     .filter((f) => ["Float", "Integer"].includes(f.type.name))
@@ -14,6 +14,8 @@ const proportionsForm = async (table) => {
       (f) => ["String", "Bool", "Integer"].includes(f.type.name) || f.is_fkey
     )
     .map((f) => f.name);
+  const maybeAddDisabledTitle = (os) =>
+    autosave ? [{ name: "", label: "Select...", disabled: true }, , ...os] : os;
   return new Form({
     fields: [
       {
@@ -23,7 +25,7 @@ const proportionsForm = async (table) => {
         sublabel: "Row count or field to sum up for total",
         required: true,
         attributes: {
-          options: ["Row count", ...outcome_fields].join(),
+          options: maybeAddDisabledTitle(["Row count", ...outcome_fields]),
         },
       },
       {
@@ -33,7 +35,7 @@ const proportionsForm = async (table) => {
         sublabel: "E.g the different wedges in a pie chart",
         required: true,
         attributes: {
-          options: factor_fields.join(),
+          options: maybeAddDisabledTitle(factor_fields),
         },
       },
       {
@@ -48,7 +50,7 @@ const proportionsForm = async (table) => {
         type: "String",
         required: true,
         attributes: {
-          options: "Donut chart,Bar chart, Pie chart",
+          options: ["Donut chart", "Bar chart", "Pie chart"],
         },
       },
       {
@@ -57,7 +59,7 @@ const proportionsForm = async (table) => {
         type: "String",
         required: true,
         attributes: {
-          options: "Legend,Inside,Outside",
+          options: ["Legend", "Inside", "Outside"],
         },
       },
       {

@@ -8,7 +8,7 @@ const { div, script, domReady } = require("@saltcorn/markup/tags");
 const { stateFieldsToWhere } = require("@saltcorn/data/plugin-helper");
 const { get_state_fields, readState } = require("./utils");
 
-const scatterForm = async (table) => {
+const scatterForm = async (table, autosave) => {
   const fields = await table.getFields();
   const x_fields = fields
     .filter((f) => ["Date", "Float", "Integer"].includes(f.type.name))
@@ -16,6 +16,8 @@ const scatterForm = async (table) => {
   const y_fields = fields
     .filter((f) => ["Date", "Float", "Integer"].includes(f.type.name))
     .map((f) => f.name);
+  const maybeAddDisabledTitle = (os) =>
+    autosave ? [{ name: "", label: "Select...", disabled: true }, , ...os] : os;
   return new Form({
     fields: [
       {
@@ -24,7 +26,7 @@ const scatterForm = async (table) => {
         type: "String",
         required: true,
         attributes: {
-          options: x_fields.join(),
+          options: maybeAddDisabledTitle(x_fields),
         },
       },
       {
@@ -33,7 +35,7 @@ const scatterForm = async (table) => {
         type: "String",
         required: true,
         attributes: {
-          options: y_fields.join(),
+          options: maybeAddDisabledTitle(y_fields),
         },
       },
       {
@@ -42,7 +44,7 @@ const scatterForm = async (table) => {
         type: "String",
         required: true,
         attributes: {
-          options: "lines, markers, lines+markers",
+          options: maybeAddDisabledTitle(["lines", "markers", "lines+markers"]),
         },
       },
       {
