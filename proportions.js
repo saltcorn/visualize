@@ -17,18 +17,10 @@ const configuration_workflow = () =>
     ],
   }); //http://localhost:3000/view/PIES?category=Fun
 
-const run = async (
-  table_id,
-  viewname,
-  cfg,
-  state,
-  extraArgs
-) => {
+const run = async (table_id, viewname, cfg, state, extraArgs) => {
   const table = await Table.findOne(table_id);
-  return proportionsPlot(table, cfg, state)
+  return await proportionsPlot(table, cfg, state);
 };
-
-
 
 module.exports = {
   name: "ProportionsVis",
