@@ -4,51 +4,51 @@ const Form = require("@saltcorn/data/models/form");
 const db = require("@saltcorn/data/db");
 const Workflow = require("@saltcorn/data/models/workflow");
 const { renderForm } = require("@saltcorn/markup");
+const { proportionsForm } = require("./proportions-plot");
+const { scatterForm, scatterPlot } = require("./scatter-plot");
 
 const configuration_workflow = () =>
   new Workflow({
     steps: [],
   });
-const getForm = async ({ viewname }) => {
+const getForm = async ({ viewname, body }) => {
   const tables = await Table.find({});
-  const axisOptions = {};
-  for (const t of tables) {
-    const flds = await t.getFields();
-    axisOptions[t.name] = flds
-      .filter((f) => ["Float", "Integer", "Date"].includes(f.type.name))
-      .map((f) => f.name);
+  const fields = [
+    {
+      name: "table",
+      label: "Table",
+      type: "String",
+      required: true,
+      attributes: {
+        options: tables.map((t) => t.name),
+      },
+    },
+    {
+      name: "plottype",
+      label: "Plot type",
+      type: "String",
+      required: true,
+      attributes: {
+        options: ["Proportion", "Relation"],
+      },
+    },
+  ];
+  if (body && body.plottype && body.table) {
+    const table = await Table.findOne({ name: db.sqlsanitize(body.table) });
+    switch (body.plottype) {
+      case "Proportion":
+        const propForm = await proportionsForm(table);
+        fields.push(...propForm.fields);
+        break;
+      case "Relation":
+        const scatForm = await scatterForm(table);
+        fields.push(...scatForm.fields);
+        break;
+    }
   }
   const form = new Form({
     action: `/view/${viewname}`,
-    fields: [
-      {
-        name: "table",
-        label: "Table",
-        type: "String",
-        required: true,
-        attributes: {
-          options: tables.map((t) => t.name).join(),
-        },
-      },
-      {
-        name: "x_field",
-        label: "X axis field",
-        type: "String",
-        required: true,
-        attributes: {
-          calcOptions: ["table", axisOptions],
-        },
-      },
-      {
-        name: "y_field",
-        label: "Y axis field",
-        type: "String",
-        required: true,
-        attributes: {
-          calcOptions: ["table", axisOptions],
-        },
-      },
-    ],
+    fields,
   });
   return form;
 };
@@ -64,10 +64,24 @@ const runPost = async (
   body,
   { req, res }
 ) => {
-  const form = await getForm({ viewname });
+  const form = await getForm({ viewname, body });
   form.validate(body);
+  let plot = "";
+  if (!form.hasErrors) {
+    const table = await Table.findOne({ name: form.values.table });
 
-  res.sendWrap("Data explorer", renderForm(form, req.csrfToken()));
+    switch (form.values.plottype) {
+      case "Proportion":
+        plot = await proportionsPlot(table, form.values, {});
+
+        break;
+      case "Relation":
+        plot = await scatterPlot(table, form.values, {});
+
+        break;
+    }
+  }
+  res.sendWrap("Data explorer", [renderForm(form, req.csrfToken()), plot]);
 };
 module.exports = {
   name: "Data Explorer",
