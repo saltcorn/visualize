@@ -71,12 +71,13 @@ const getForm = async ({ viewname, body }) => {
   });
   return form;
 };
-JSON.stringify;
+
 const js = (viewname) =>
   script(`
 function save_as_view(that) {
   const form = $(that).closest('form');
   const newviewname = prompt("Please enter the name of the view to be saved", "");
+  if(!newviewname) return;
   $('input[name=newviewname]').val(newviewname)
   view_post("${viewname}", "save_as_view", $(form).serialize())
 }
@@ -131,6 +132,10 @@ const save_as_view = async (table_id, viewname, config, body, { req }) => {
       newviewname,
       ...configuration
     } = form.values;
+    const existing = await View.findOne({ name: newviewname });
+    if (existing) {
+      return { json: { error: "A view with that name already exists" } };
+    }
     const tbl = await Table.findOne({ name: table });
     const viewtemplate =
       plottype === "Relation" ? "RelationsVis" : "ProportionsVis";
@@ -139,9 +144,11 @@ const save_as_view = async (table_id, viewname, config, body, { req }) => {
       configuration,
       name: newviewname,
       viewtemplate,
+      min_role: 1,
     });
+    return { json: { success: "ok", notify: `View ${newviewname} created` } };
   }
-  return { json: { success: "ok" } };
+  return { json: { error: "Form incomplete" } };
 };
 module.exports = {
   name: "Data Explorer",
