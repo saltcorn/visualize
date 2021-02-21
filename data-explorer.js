@@ -4,8 +4,9 @@ const Form = require("@saltcorn/data/models/form");
 const db = require("@saltcorn/data/db");
 const Workflow = require("@saltcorn/data/models/workflow");
 const { renderForm } = require("@saltcorn/markup");
-const { proportionsForm } = require("./proportions-plot");
+const { proportionsForm, proportionsPlot } = require("./proportions-plot");
 const { scatterForm, scatterPlot } = require("./scatter-plot");
+const { div, script, domReady } = require("@saltcorn/markup/tags");
 
 const configuration_workflow = () =>
   new Workflow({
@@ -49,9 +50,27 @@ const getForm = async ({ viewname, body }) => {
   const form = new Form({
     action: `/view/${viewname}`,
     fields,
+    onChange: "$(this).submit()",
+    noSubmitButton: true,
+    additionalButtons: [
+      {
+        label: "Save as view",
+        onclick: "save_as_view(this)",
+        class: "btn btn-primary",
+      },
+    ],
   });
   return form;
 };
+
+const js = (viewname) =>
+  script(`
+function save_as_view(that) {
+  const form = $(that).parent('form');
+  console.log(form);
+  view_post("${viewname}", "save_as_view", form.serialize())
+}
+`);
 const run = async (table_id, viewname, cfg, state, { res, req }) => {
   const form = await getForm({ viewname });
   return renderForm(form, req.csrfToken());
@@ -81,7 +100,11 @@ const runPost = async (
         break;
     }
   }
-  res.sendWrap("Data explorer", [renderForm(form, req.csrfToken()), plot]);
+  res.sendWrap("Data explorer", [
+    renderForm(form, req.csrfToken()),
+    js(viewname),
+    plot,
+  ]);
 };
 module.exports = {
   name: "Data Explorer",
