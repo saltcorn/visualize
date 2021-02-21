@@ -1,6 +1,7 @@
 const Field = require("@saltcorn/data/models/field");
 const Table = require("@saltcorn/data/models/table");
 const Form = require("@saltcorn/data/models/form");
+const View = require("@saltcorn/data/models/view");
 const db = require("@saltcorn/data/db");
 const Workflow = require("@saltcorn/data/models/workflow");
 const { renderForm } = require("@saltcorn/markup");
@@ -40,6 +41,7 @@ const getForm = async ({ viewname, body }) => {
         ],
       },
     },
+    { name: "newviewname", input_type: "hidden" },
   ];
   if (body && body.plottype && body.table) {
     const table = await Table.findOne({ name: db.sqlsanitize(body.table) });
@@ -74,7 +76,8 @@ const js = (viewname) =>
   script(`
 function save_as_view(that) {
   const form = $(that).closest('form');
-  console.log(form, form.serializeArray());
+  const newviewname = prompt("Please enter the name of the view to be saved", "");
+  $('input[name=newviewname]').val(newviewname)
   view_post("${viewname}", "save_as_view", $(form).serialize())
 }
 `);
@@ -107,8 +110,8 @@ const runPost = async (
         break;
     }
   }
-  form.hasErrors=false
-  form.errors={}
+  form.hasErrors = false;
+  form.errors = {};
   res.sendWrap("Data explorer", [
     renderForm(form, req.csrfToken()),
     js(viewname),
@@ -120,6 +123,24 @@ const save_as_view = async (table_id, viewname, config, body, { req }) => {
   db.sql_log({ body });
   const form = await getForm({ viewname, body });
   form.validate(body);
+  if (!form.hasErrors) {
+    const {
+      _csrf,
+      table,
+      plottype,
+      newviewname,
+      ...configuration
+    } = form.values;
+    const tbl = await Table.findOne({ name: table });
+    const viewtemplate =
+      plottype === "Relation" ? "RelationsVis" : "ProportionsVis";
+    await View.create({
+      table_id: tbl.id,
+      configuration,
+      name: newviewname,
+      viewtemplate,
+    });
+  }
   return { json: { success: "ok" } };
 };
 module.exports = {
