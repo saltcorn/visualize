@@ -1,11 +1,11 @@
 {
   "name": "@saltcorn/visualize",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Data visualization views plugin",
   "main": "visualize.js",
   "dependencies": {
-    "@saltcorn/markup": "^0.3.0",
-    "@saltcorn/data": "^0.3.0"
+    "@saltcorn/markup": "^0.4.0",
+    "@saltcorn/data": "^0.4.0"
   },
   "author": "Tom Nielsen",
   "license": "MIT",
