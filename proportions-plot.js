@@ -242,7 +242,7 @@ const proportionsPlot = async (
           },
         ];
 
-  var layout = {
+  let layout = {
     title,
     showlegend: label_position === "Legend",
     height: +height,
@@ -250,7 +250,12 @@ const proportionsPlot = async (
       ? { l: 50, pad: 4, t: 40, b: 30, r: 25 }
       : { l: 50, pad: 4, t: 10, b: 30, r: 25 },
   };
-  var config = {
+  if (style === "Bar chart") {
+    layout.yaxis = {
+      title: isCount ? "Count" : `${statistic || "Sum"} ${outcome_field}`,
+    };
+  }
+  let config = {
     displayModeBar: false,
     responsive: true,
   };
