@@ -114,7 +114,7 @@ const plotly = (id, factor, selected, isJoin, ...args) =>
       var label = ${
         isJoin ? "data.points[0].customdata[0]" : "data.points[0].label"
       };
-      if(label===${selected ? JSON.stringify(selected) : selected}) {
+      if((''+label)===(''+${selected ? JSON.stringify(selected) : selected})) {
         unset_state_field("${factor}");
       } else
         set_state_field("${factor}",label);
