@@ -25,7 +25,17 @@ const proportionsForm = async (table, autosave) => {
         sublabel: "Row count or field to sum up for total",
         required: true,
         attributes: {
-          options: maybeAddDisabledTitle(["Row count", ...outcome_fields]),
+          options: maybeAddDisabledTitle(outcome_fields),
+        },
+      },
+      {
+        name: "statistic",
+        label: "Statistic",
+        type: "String",
+        sublabel: "Statistic applied to outcome",
+        required: true,
+        attributes: {
+          options: ["Count", "Avg", "Sum", "Max", "Min"],
         },
       },
       {
@@ -115,6 +125,7 @@ const proportionsPlot = async (
   table,
   {
     outcome_field,
+    statistic,
     factor_field,
     style,
     title,
@@ -149,9 +160,10 @@ const proportionsPlot = async (
         factor_field_field.attributes.summary_field || "id"
       )}"`
     : `"${db.sqlsanitize(factor_field)}"`;
+  const stat = db.sqlsanitize(statistic || "SUM").toLowerCase();
   const outcome = isCount
     ? `COUNT(*)`
-    : `SUM("${db.sqlsanitize(outcome_field)}")`;
+    : `${stat}("${db.sqlsanitize(outcome_field)}")`;
 
   const selJoin = isJoin ? `, "${factor_field}" as fkey` : "";
   const groupBy = isJoin
@@ -163,6 +175,7 @@ const proportionsPlot = async (
   )}"${selJoin} from ${table.sql_name} ${join} ${tail}`;
 
   const rows_db = (await db.query(sql, values)).rows;
+
   var rows;
   if (
     !isJoin &&
@@ -175,10 +188,10 @@ const proportionsPlot = async (
     rows = colOpts.map((factor) => {
       const rowdb = rows_db.find((row) => row[factor_field] == factor);
       if (rowdb) return rowdb;
-      else return { [factor_field]: factor, [isCount ? "count" : "sum"]: 0 };
+      else return { [factor_field]: factor, [isCount ? "count" : stat]: 0 };
     });
   } else rows = rows_db;
-  const y = rows.map((r) => (isCount ? r.count : r.sum));
+  const y = rows.map((r) => (isCount ? r.count : r[stat]));
   const x = rows.map((r) => {
     const v = r[factor_field];
     if (v === null && null_label) return null_label;
