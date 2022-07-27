@@ -151,7 +151,7 @@ const proportionsPlot = async (
     ? db.sqlsanitize(factor_field_field.reftable_name)
     : "";
   const join = isJoin
-    ? `left join ${db.getTenantSchemaPrefix()}"${joinTable}" j on j.id="${db.sqlsanitize(
+    ? `left join ${db.getTenantSchemaPrefix()}"${joinTable}" j on j.id=mt."${db.sqlsanitize(
         factor_field
       )}"`
     : "";
@@ -163,16 +163,17 @@ const proportionsPlot = async (
   const stat = db.sqlsanitize(statistic || "SUM").toLowerCase();
   const outcome = isCount
     ? `COUNT(*)`
-    : `${stat}("${db.sqlsanitize(outcome_field)}")`;
+    : `${stat}(mt."${db.sqlsanitize(outcome_field)}")`;
 
-  const selJoin = isJoin ? `, "${factor_field}" as fkey` : "";
+  const selJoin = isJoin ? `, mt."${factor_field}" as fkey` : "";
   const groupBy = isJoin
-    ? `"${db.sqlsanitize(factor_field)}", ${the_factor}`
-    : `"${db.sqlsanitize(factor_field)}"`;
+    ? `mt."${db.sqlsanitize(factor_field)}", ${the_factor}`
+    : `mt."${db.sqlsanitize(factor_field)}"`;
   const tail = `${where} group by ${groupBy}`;
   const sql = `select ${outcome}, ${the_factor} as "${db.sqlsanitize(
     factor_field
-  )}"${selJoin} from ${table.sql_name} ${join} ${tail}`;
+  )}"${selJoin} from ${table.sql_name} mt ${join} ${tail}`;
+  console.log({ isJoin, outcome, the_factor, factor_field, join, tail, sql });
 
   const rows_db = (await db.query(sql, values)).rows;
 
