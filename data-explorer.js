@@ -7,7 +7,7 @@ const Workflow = require("@saltcorn/data/models/workflow");
 const { renderForm } = require("@saltcorn/markup");
 const { proportionsForm, proportionsPlot } = require("./proportions-plot");
 const { scatterForm, scatterPlot } = require("./scatter-plot");
-const { div, script, domReady } = require("@saltcorn/markup/tags");
+const { div, script, domReady, pre, code } = require("@saltcorn/markup/tags");
 
 const configuration_workflow = () =>
   new Workflow({
@@ -99,16 +99,19 @@ const runPost = async (
   let plot = "";
   if (!form.hasErrors) {
     const table = await Table.findOne({ name: form.values.table });
+    try {
+      switch (form.values.plottype) {
+        case "Proportion":
+          plot = await proportionsPlot(table, form.values, {});
 
-    switch (form.values.plottype) {
-      case "Proportion":
-        plot = await proportionsPlot(table, form.values, {});
+          break;
+        case "Relation":
+          plot = await scatterPlot(table, form.values, {});
 
-        break;
-      case "Relation":
-        plot = await scatterPlot(table, form.values, {});
-
-        break;
+          break;
+      }
+    } catch (e) {
+      plot = pre(code(e.stack));
     }
   }
   form.hasErrors = false;
@@ -124,13 +127,8 @@ const save_as_view = async (table_id, viewname, config, body, { req }) => {
   const form = await getForm({ viewname, body });
   form.validate(body);
   if (!form.hasErrors) {
-    const {
-      _csrf,
-      table,
-      plottype,
-      newviewname,
-      ...configuration
-    } = form.values;
+    const { _csrf, table, plottype, newviewname, ...configuration } =
+      form.values;
     const existing = await View.findOne({ name: newviewname });
     if (existing) {
       return { json: { error: "A view with that name already exists" } };
