@@ -60,7 +60,7 @@ const proportionsForm = async (table, autosave) => {
         type: "String",
         required: true,
         attributes: {
-          options: ["Donut chart", "Bar chart", "Pie chart"],
+          options: ["Donut chart", "Pie chart", "Bar chart", "Horizontal Bar chart"],
         },
       },
       {
@@ -111,9 +111,8 @@ const plotly = (id, factor, selected, isJoin, ...args) =>
     .join()});
   document.getElementById("${id}").on('plotly_click', function(data){
     if(data.points.length>0) {
-      var label = ${
-        isJoin ? "data.points[0].customdata[0]" : "data.points[0].label"
-      };
+      var label = ${isJoin ? "data.points[0].customdata[0]" : "data.points[0].label"
+  };
       if((''+label)===(''+${selected ? JSON.stringify(selected) : selected})) {
         unset_state_field("${factor}");
       } else
@@ -152,13 +151,13 @@ const proportionsPlot = async (
     : "";
   const join = isJoin
     ? `left join ${db.getTenantSchemaPrefix()}"${joinTable}" j on j.id=mt."${db.sqlsanitize(
-        factor_field
-      )}"`
+      factor_field
+    )}"`
     : "";
   const the_factor = isJoin
     ? `j."${db.sqlsanitize(
-        factor_field_field.attributes.summary_field || "id"
-      )}"`
+      factor_field_field.attributes.summary_field || "id"
+    )}"`
     : `"${db.sqlsanitize(factor_field)}"`;
   const stat = db.sqlsanitize(statistic || "SUM").toLowerCase();
   const outcome = isCount
@@ -173,7 +172,6 @@ const proportionsPlot = async (
   const sql = `select ${outcome}, ${the_factor} as "${db.sqlsanitize(
     factor_field
   )}"${selJoin} from ${table.sql_name} mt ${join} ${tail}`;
-  console.log({ isJoin, outcome, the_factor, factor_field, join, tail, sql });
 
   const rows_db = (await db.query(sql, values)).rows;
 
@@ -202,24 +200,43 @@ const proportionsPlot = async (
   const data =
     style === "Bar chart"
       ? [
+        {
+          type: "bar",
+          x,
+          y,
+          customdata,
+          marker: {
+            color: hasFactor
+              ? rows.map((r) =>
+                (isJoin ? `${r.fkey}` : r[factor_field]) ===
+                  state[factor_field]
+                  ? "rgb(31, 119, 180)"
+                  : "rgb(150, 150, 150)"
+              )
+              : "rgb(31, 119, 180)",
+          },
+        },
+      ]
+      : style === "Horizontal Bar chart"
+        ? [
           {
             type: "bar",
-            x,
-            y,
+            x: y,
+            y: x,
+            orientation: 'h',
             customdata,
             marker: {
               color: hasFactor
                 ? rows.map((r) =>
-                    (isJoin ? `${r.fkey}` : r[factor_field]) ===
+                  (isJoin ? `${r.fkey}` : r[factor_field]) ===
                     state[factor_field]
-                      ? "rgb(31, 119, 180)"
-                      : "rgb(150, 150, 150)"
-                  )
+                    ? "rgb(31, 119, 180)"
+                    : "rgb(150, 150, 150)"
+                )
                 : "rgb(31, 119, 180)",
             },
           },
-        ]
-      : [
+        ] : [
           {
             type: "pie",
             labels: x,
@@ -230,14 +247,14 @@ const proportionsPlot = async (
               label_position === "Legend"
                 ? undefined
                 : label_position === "Outside"
-                ? "outside"
-                : "inside",
+                  ? "outside"
+                  : "inside",
             pull: hasFactor
               ? rows.map((r) =>
-                  (isJoin ? r.fkey : r[factor_field]) === state[factor_field]
-                    ? 0.1
-                    : 0.0
-                )
+                (isJoin ? r.fkey : r[factor_field]) === state[factor_field]
+                  ? 0.1
+                  : 0.0
+              )
               : undefined,
             hole: style === "Donut chart" ? 0.5 : 0.0,
           },
