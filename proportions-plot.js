@@ -264,15 +264,19 @@ const proportionsPlot = async (
     title,
     showlegend: label_position === "Legend",
     height: +height,
-    margin: title
-      ? { l: 50, pad: 4, t: 40, b: 30, r: 25 }
-      : { l: 50, pad: 4, t: 10, b: 30, r: 25 },
+    xaxis: {
+      automargin: true,
+    },
+    yaxis: {
+      automargin: true,
+    }
   };
-  if (style === "Bar chart") {
-    layout.yaxis = {
-      title: isCount ? "Count" : `${statistic || "Sum"} ${outcome_field}`,
-    };
-  }
+  if (style === "Bar chart")
+    layout.yaxis.title = isCount ? "Count" : `${statistic || "Sum"} ${outcome_field}`
+  if (style === "Horizontal Bar chart")
+    layout.xaxis.title = isCount ? "Count" : `${statistic || "Sum"} ${outcome_field}`
+
+
   let config = {
     displayModeBar: false,
     responsive: true,
