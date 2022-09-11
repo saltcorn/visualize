@@ -113,7 +113,7 @@ const splitState = (factor, state, fields) => {
   return { noFactor, hasFactor, hasNoFactor };
 };
 const plotly = (id, factor, selected, isJoin, ...args) =>
-  `Plotly.plot(document.getElementById("${id}"),${args
+  `Plotly.newPlot(document.getElementById("${id}"),${args
     .map(JSON.stringify)
     .join()});
   document.getElementById("${id}").on('plotly_click', function(data){

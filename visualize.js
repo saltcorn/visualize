@@ -1,7 +1,12 @@
+const { features } = require("@saltcorn/data/db/state");
+
 module.exports = {
   headers: [
     {
-      script: "/plugins/public/visualize/plotly.min.js",
+      script: `/plugins/public/visualize${features?.version_plugin_serve_path
+        ? "@" + require("./package.json").version
+        : ""
+        }/plotly.min.js`,
     },
   ],
   sc_plugin_api_version: 1,

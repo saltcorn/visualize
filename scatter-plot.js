@@ -70,7 +70,7 @@ const fieldToLabel = (fld) =>
     : fld.label;
 
 const plotly = (id, ...args) =>
-  `Plotly.plot(document.getElementById("${id}"),${args
+  `Plotly.newPlot(document.getElementById("${id}"),${args
     .map(JSON.stringify)
     .join()});`;
 
