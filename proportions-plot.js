@@ -70,6 +70,21 @@ const proportionsForm = async (table, autosave) => {
         required: false,
         showIf: { style: ["Bar chart", "Horizontal Bar chart"] }
       },
+
+      {
+        name: "lower_limit",
+        label: "Lower value limit",
+        type: "Float",
+        required: false,
+        showIf: { style: ["Bar chart", "Horizontal Bar chart"] }
+      },
+      {
+        name: "upper_limit",
+        label: "Upper value limit",
+        type: "Float",
+        required: false,
+        showIf: { style: ["Bar chart", "Horizontal Bar chart"] }
+      },
       {
         name: "label_position",
         label: "Label Position",
@@ -137,6 +152,8 @@ const proportionsPlot = async (
     title,
     null_label,
     axis_title,
+    upper_limit,
+    lower_limit,
     label_position = "Legend",
     height = 450,
   },
@@ -279,11 +296,16 @@ const proportionsPlot = async (
       automargin: true,
     }
   };
-  if (style === "Bar chart")
+  if (style === "Bar chart") {
     layout.yaxis.title = axis_title || (isCount ? "Count" : `${statistic || "Sum"} ${outcome_field}`)
-  if (style === "Horizontal Bar chart")
+    if (typeof lower_limit === "number" && typeof upper_limit === "number")
+      layout.yaxis.range = [lower_limit, upper_limit]
+  }
+  if (style === "Horizontal Bar chart") {
     layout.xaxis.title = axis_title || (isCount ? "Count" : `${statistic || "Sum"} ${outcome_field}`)
-
+    if (typeof lower_limit === "number" && typeof upper_limit === "number")
+      layout.xaxis.range = [lower_limit, upper_limit]
+  }
 
   let config = {
     displayModeBar: false,
