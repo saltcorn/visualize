@@ -104,11 +104,8 @@ const scatterPlot = async (
     title,
     showlegend: false,
     height: +height,
-    margin: title
-      ? { l: 50, pad: 4, t: 40, b: 30, r: 25 }
-      : { l: 50, pad: 4, t: 10, b: 30, r: 25 },
-    xaxis: { title: fieldToLabel(xfld) },
-    yaxis: { title: fieldToLabel(yfld) },
+    xaxis: { title: fieldToLabel(xfld), automargin: true },
+    yaxis: { title: fieldToLabel(yfld), automargin: true },
   };
   return (
     div({ id: divid }) + script(domReady(plotly(divid, data, layout, config)))
