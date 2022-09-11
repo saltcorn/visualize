@@ -64,6 +64,13 @@ const proportionsForm = async (table, autosave) => {
         },
       },
       {
+        name: "axis_title",
+        label: "Axis title",
+        type: "String",
+        required: false,
+        showIf: { style: ["Bar chart", "Horizontal Bar chart"] }
+      },
+      {
         name: "label_position",
         label: "Label Position",
         type: "String",
@@ -129,6 +136,7 @@ const proportionsPlot = async (
     style,
     title,
     null_label,
+    axis_title,
     label_position = "Legend",
     height = 450,
   },
@@ -272,9 +280,9 @@ const proportionsPlot = async (
     }
   };
   if (style === "Bar chart")
-    layout.yaxis.title = isCount ? "Count" : `${statistic || "Sum"} ${outcome_field}`
+    layout.yaxis.title = axis_title || (isCount ? "Count" : `${statistic || "Sum"} ${outcome_field}`)
   if (style === "Horizontal Bar chart")
-    layout.xaxis.title = isCount ? "Count" : `${statistic || "Sum"} ${outcome_field}`
+    layout.xaxis.title = axis_title || (isCount ? "Count" : `${statistic || "Sum"} ${outcome_field}`)
 
 
   let config = {
