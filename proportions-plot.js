@@ -289,6 +289,7 @@ const proportionsPlot = async (
     title,
     showlegend: label_position === "Legend",
     height: +height,
+    autosize: true,
     margin: title
       ? { pad: 4, t: 40, r: 25 }
       : { pad: 4, t: 10, r: 25 },
@@ -315,7 +316,7 @@ const proportionsPlot = async (
     responsive: true,
   };
   return (
-    div({ id: divid, class: "w-100" }) +
+    div({ id: divid, class: "" }) +
     script(
       domReady(
         plotly(
@@ -326,7 +327,11 @@ const proportionsPlot = async (
           data,
           layout,
           config
-        )
+        ) +
+        `setTimeout(()=>Plotly.Plots.resize('${divid}'), 250);
+        setTimeout(()=>Plotly.Plots.resize('${divid}'), 500);
+        setTimeout(()=>Plotly.Plots.resize('${divid}'), 750);
+        setInterval(()=>Plotly.Plots.resize('${divid}'), 1000);`
       )
     )
   );

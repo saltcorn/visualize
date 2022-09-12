@@ -111,7 +111,12 @@ const scatterPlot = async (
     yaxis: { title: fieldToLabel(yfld), automargin: true },
   };
   return (
-    div({ id: divid }) + script(domReady(plotly(divid, data, layout, config)))
+    div({ id: divid }) +
+    script(domReady(plotly(divid, data, layout, config))) +
+    `setTimeout(()=>Plotly.Plots.resize('${divid}'), 250);
+        setTimeout(()=>Plotly.Plots.resize('${divid}'), 500);
+        setTimeout(()=>Plotly.Plots.resize('${divid}'), 750);
+        setInterval(()=>Plotly.Plots.resize('${divid}'), 1000);`
   );
 };
 module.exports = { scatterForm, scatterPlot };
