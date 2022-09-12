@@ -301,11 +301,13 @@ const proportionsPlot = async (
     }
   };
   if (style === "Bar chart") {
+    layout.xaxis.nticks = x.length
     layout.yaxis.title = axis_title || (isCount ? "Count" : `${statistic || "Sum"} ${outcome_field}`)
     if (typeof lower_limit === "number" && typeof upper_limit === "number")
       layout.yaxis.range = [lower_limit, upper_limit]
   }
   if (style === "Horizontal Bar chart") {
+    layout.yaxis.nticks = x.length
     layout.xaxis.title = axis_title || (isCount ? "Count" : `${statistic || "Sum"} ${outcome_field}`)
     if (typeof lower_limit === "number" && typeof upper_limit === "number")
       layout.xaxis.range = [lower_limit, upper_limit]
