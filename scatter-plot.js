@@ -104,6 +104,9 @@ const scatterPlot = async (
     title,
     showlegend: false,
     height: +height,
+    margin: title
+      ? { pad: 4, t: 40, r: 25 }
+      : { pad: 4, t: 10, r: 25 },
     xaxis: { title: fieldToLabel(xfld), automargin: true },
     yaxis: { title: fieldToLabel(yfld), automargin: true },
   };

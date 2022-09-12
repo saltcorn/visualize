@@ -289,6 +289,9 @@ const proportionsPlot = async (
     title,
     showlegend: label_position === "Legend",
     height: +height,
+    margin: title
+      ? { pad: 4, t: 40, r: 25 }
+      : { pad: 4, t: 10, r: 25 },
     xaxis: {
       automargin: true,
     },
@@ -312,7 +315,7 @@ const proportionsPlot = async (
     responsive: true,
   };
   return (
-    div({ id: divid }) +
+    div({ id: divid, class: "w-100" }) +
     script(
       domReady(
         plotly(
