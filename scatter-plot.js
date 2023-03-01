@@ -104,19 +104,21 @@ const scatterPlot = async (
     title,
     showlegend: false,
     height: +height,
-    margin: title
-      ? { pad: 4, t: 40, r: 25 }
-      : { pad: 4, t: 10, r: 25 },
+    margin: title ? { pad: 4, t: 40, r: 25 } : { pad: 4, t: 10, r: 25 },
     xaxis: { title: fieldToLabel(xfld), automargin: true },
     yaxis: { title: fieldToLabel(yfld), automargin: true },
   };
   return (
     div({ id: divid }) +
-    script(domReady(plotly(divid, data, layout, config))) +
-    `setTimeout(()=>Plotly.Plots.resize('${divid}'), 250);
+    script(
+      domReady(
+        plotly(divid, data, layout, config) +
+          `setTimeout(()=>Plotly.Plots.resize('${divid}'), 250);
         setTimeout(()=>Plotly.Plots.resize('${divid}'), 500);
         setTimeout(()=>Plotly.Plots.resize('${divid}'), 750);
         setInterval(()=>Plotly.Plots.resize('${divid}'), 1000);`
+      )
+    )
   );
 };
 module.exports = { scatterForm, scatterPlot };
