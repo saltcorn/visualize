@@ -5,8 +5,11 @@ const db = require("@saltcorn/data/db");
 const Workflow = require("@saltcorn/data/models/workflow");
 
 const { div, script, domReady } = require("@saltcorn/markup/tags");
-const { stateFieldsToWhere } = require("@saltcorn/data/plugin-helper");
-const { get_state_fields, readState } = require("./utils");
+const {
+  stateFieldsToWhere,
+  readState,
+} = require("@saltcorn/data/plugin-helper");
+const { get_state_fields } = require("./utils");
 
 const scatterForm = async (table, autosave) => {
   const fields = await table.getFields();
