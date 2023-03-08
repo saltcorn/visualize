@@ -60,7 +60,12 @@ const proportionsForm = async (table, autosave) => {
         type: "String",
         required: true,
         attributes: {
-          options: ["Donut chart", "Pie chart", "Bar chart", "Horizontal Bar chart"],
+          options: [
+            "Donut chart",
+            "Pie chart",
+            "Bar chart",
+            "Horizontal Bar chart",
+          ],
         },
       },
       {
@@ -68,7 +73,7 @@ const proportionsForm = async (table, autosave) => {
         label: "Axis title",
         type: "String",
         required: false,
-        showIf: { style: ["Bar chart", "Horizontal Bar chart"] }
+        showIf: { style: ["Bar chart", "Horizontal Bar chart"] },
       },
 
       {
@@ -76,14 +81,14 @@ const proportionsForm = async (table, autosave) => {
         label: "Lower value limit",
         type: "Float",
         required: false,
-        showIf: { style: ["Bar chart", "Horizontal Bar chart"] }
+        showIf: { style: ["Bar chart", "Horizontal Bar chart"] },
       },
       {
         name: "upper_limit",
         label: "Upper value limit",
         type: "Float",
         required: false,
-        showIf: { style: ["Bar chart", "Horizontal Bar chart"] }
+        showIf: { style: ["Bar chart", "Horizontal Bar chart"] },
       },
       {
         name: "label_position",
@@ -133,8 +138,9 @@ const plotly = (id, factor, selected, isJoin, ...args) =>
     .join()});
   document.getElementById("${id}").on('plotly_click', function(data){
     if(data.points.length>0) {
-      var label = ${isJoin ? "data.points[0].customdata[0]" : "data.points[0].label"
-  };
+      var label = ${
+        isJoin ? "data.points[0].customdata[0]" : "data.points[0].label"
+      };
       if((''+label)===(''+${selected ? JSON.stringify(selected) : selected})) {
         unset_state_field("${factor}");
       } else
@@ -170,19 +176,23 @@ const proportionsPlot = async (
     );
   const isJoin = factor_field_field.type === "Key";
   const { noFactor, hasFactor } = splitState(factor_field, state, fields);
-  const { where, values } = db.mkWhere(noFactor);
+  const noFactorObj = {};
+  Object.keys(noFactor).forEach((k) => {
+    noFactorObj[`mt.${k}`] = noFactor[k];
+  });
+  const { where, values } = db.mkWhere(noFactorObj);
   const joinTable = isJoin
     ? db.sqlsanitize(factor_field_field.reftable_name)
     : "";
   const join = isJoin
     ? `left join ${db.getTenantSchemaPrefix()}"${joinTable}" j on j.id=mt."${db.sqlsanitize(
-      factor_field
-    )}"`
+        factor_field
+      )}"`
     : "";
   const the_factor = isJoin
     ? `j."${db.sqlsanitize(
-      factor_field_field.attributes.summary_field || "id"
-    )}"`
+        factor_field_field.attributes.summary_field || "id"
+      )}"`
     : `"${db.sqlsanitize(factor_field)}"`;
   const stat = db.sqlsanitize(statistic || "SUM").toLowerCase();
   const outcome = isCount
@@ -225,43 +235,44 @@ const proportionsPlot = async (
   const data =
     style === "Bar chart"
       ? [
-        {
-          type: "bar",
-          x,
-          y,
-          customdata,
-          marker: {
-            color: hasFactor
-              ? rows.map((r) =>
-                (isJoin ? `${r.fkey}` : r[factor_field]) ===
-                  state[factor_field]
-                  ? "rgb(31, 119, 180)"
-                  : "rgb(150, 150, 150)"
-              )
-              : "rgb(31, 119, 180)",
-          },
-        },
-      ]
-      : style === "Horizontal Bar chart"
-        ? [
           {
             type: "bar",
-            x: y,
-            y: x,
-            orientation: 'h',
+            x,
+            y,
             customdata,
             marker: {
               color: hasFactor
                 ? rows.map((r) =>
-                  (isJoin ? `${r.fkey}` : r[factor_field]) ===
+                    (isJoin ? `${r.fkey}` : r[factor_field]) ===
                     state[factor_field]
-                    ? "rgb(31, 119, 180)"
-                    : "rgb(150, 150, 150)"
-                )
+                      ? "rgb(31, 119, 180)"
+                      : "rgb(150, 150, 150)"
+                  )
                 : "rgb(31, 119, 180)",
             },
           },
-        ] : [
+        ]
+      : style === "Horizontal Bar chart"
+      ? [
+          {
+            type: "bar",
+            x: y,
+            y: x,
+            orientation: "h",
+            customdata,
+            marker: {
+              color: hasFactor
+                ? rows.map((r) =>
+                    (isJoin ? `${r.fkey}` : r[factor_field]) ===
+                    state[factor_field]
+                      ? "rgb(31, 119, 180)"
+                      : "rgb(150, 150, 150)"
+                  )
+                : "rgb(31, 119, 180)",
+            },
+          },
+        ]
+      : [
           {
             type: "pie",
             labels: x,
@@ -272,14 +283,14 @@ const proportionsPlot = async (
               label_position === "Legend"
                 ? undefined
                 : label_position === "Outside"
-                  ? "outside"
-                  : "inside",
+                ? "outside"
+                : "inside",
             pull: hasFactor
               ? rows.map((r) =>
-                (isJoin ? r.fkey : r[factor_field]) === state[factor_field]
-                  ? 0.1
-                  : 0.0
-              )
+                  (isJoin ? r.fkey : r[factor_field]) === state[factor_field]
+                    ? 0.1
+                    : 0.0
+                )
               : undefined,
             hole: style === "Donut chart" ? 0.5 : 0.0,
           },
@@ -290,27 +301,29 @@ const proportionsPlot = async (
     showlegend: label_position === "Legend",
     height: +height,
     autosize: true,
-    margin: title
-      ? { pad: 4, t: 40, r: 25 }
-      : { pad: 4, t: 10, r: 25 },
+    margin: title ? { pad: 4, t: 40, r: 25 } : { pad: 4, t: 10, r: 25 },
     xaxis: {
       automargin: true,
     },
     yaxis: {
       automargin: true,
-    }
+    },
   };
   if (style === "Bar chart") {
-    layout.xaxis.nticks = x.length
-    layout.yaxis.title = axis_title || (isCount ? "Count" : `${statistic || "Sum"} ${outcome_field}`)
+    layout.xaxis.nticks = x.length;
+    layout.yaxis.title =
+      axis_title ||
+      (isCount ? "Count" : `${statistic || "Sum"} ${outcome_field}`);
     if (typeof lower_limit === "number" && typeof upper_limit === "number")
-      layout.yaxis.range = [lower_limit, upper_limit]
+      layout.yaxis.range = [lower_limit, upper_limit];
   }
   if (style === "Horizontal Bar chart") {
-    layout.yaxis.nticks = x.length
-    layout.xaxis.title = axis_title || (isCount ? "Count" : `${statistic || "Sum"} ${outcome_field}`)
+    layout.yaxis.nticks = x.length;
+    layout.xaxis.title =
+      axis_title ||
+      (isCount ? "Count" : `${statistic || "Sum"} ${outcome_field}`);
     if (typeof lower_limit === "number" && typeof upper_limit === "number")
-      layout.xaxis.range = [lower_limit, upper_limit]
+      layout.xaxis.range = [lower_limit, upper_limit];
   }
 
   let config = {
@@ -330,7 +343,7 @@ const proportionsPlot = async (
           layout,
           config
         ) +
-        `setTimeout(()=>Plotly.Plots.resize('${divid}'), 250);
+          `setTimeout(()=>Plotly.Plots.resize('${divid}'), 250);
         setTimeout(()=>Plotly.Plots.resize('${divid}'), 500);
         setTimeout(()=>Plotly.Plots.resize('${divid}'), 750);
         setInterval(()=>Plotly.Plots.resize('${divid}'), 1000);`
