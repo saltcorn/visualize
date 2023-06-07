@@ -20,7 +20,7 @@ const scatterForm = async (table, autosave) => {
     .filter((f) => ["Date", "Float", "Integer"].includes(f.type.name))
     .map((f) => f.name);
   const maybeAddDisabledTitle = (os) =>
-    autosave ? [{ name: "", label: "Select...", disabled: true }, , ...os] : os;
+    autosave ? [{ name: "", label: "Select...", disabled: true }, ...os] : os;
   return new Form({
     fields: [
       {

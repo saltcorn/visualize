@@ -15,7 +15,7 @@ const proportionsForm = async (table, autosave) => {
     )
     .map((f) => f.name);
   const maybeAddDisabledTitle = (os) =>
-    autosave ? [{ name: "", label: "Select...", disabled: true }, , ...os] : os;
+    autosave ? [{ name: "", label: "Select...", disabled: true }, ...os] : os;
   return new Form({
     fields: [
       {
