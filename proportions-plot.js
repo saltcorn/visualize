@@ -2,8 +2,8 @@ const Form = require("@saltcorn/data/models/form");
 const db = require("@saltcorn/data/db");
 
 const { div, script, domReady } = require("@saltcorn/markup/tags");
-const { get_state_fields, readState } = require("./utils");
-
+const { get_state_fields } = require("./utils");
+const { readState } = require("@saltcorn/data/plugin-helper");
 const proportionsForm = async (table, autosave) => {
   const fields = await table.getFields();
   const outcome_fields = fields
@@ -121,7 +121,7 @@ const splitState = (factor, state, fields) => {
   var hasFactor = false;
   var hasNoFactor = false;
   Object.entries(state).forEach(([k, v]) => {
-    if (k === factor) hasFactor = true;
+    if (k === factor && !(v?.in || Array.isArray(v))) hasFactor = true;
     else {
       const field = fields.find((f) => f.name == k);
       if (field) {
@@ -225,6 +225,7 @@ const proportionsPlot = async (
       else return { [factor_field]: factor, [isCount ? "count" : stat]: 0 };
     });
   } else rows = rows_db;
+  if (isCount || stat === "count") rows = rows.filter((r) => r.count > 0);
   const y = rows.map((r) => (isCount ? r.count : r[stat]));
   const x = rows.map((r) => {
     const v = r[factor_field];
