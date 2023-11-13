@@ -19,7 +19,7 @@ const configuration_workflow = () =>
 
 const run = async (table_id, viewname, cfg, state, extraArgs) => {
   const table = await Table.findOne(table_id);
-  return await proportionsPlot(table, cfg, state);
+  return await proportionsPlot(table, cfg, state, extraArgs.req);
 };
 
 module.exports = {

@@ -102,7 +102,7 @@ const runPost = async (
     try {
       switch (form.values.plottype) {
         case "Proportion":
-          plot = await proportionsPlot(table, form.values, {});
+          plot = await proportionsPlot(table, form.values, {}, req);
 
           break;
         case "Relation":

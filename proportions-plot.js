@@ -1,9 +1,11 @@
 const Form = require("@saltcorn/data/models/form");
 const db = require("@saltcorn/data/db");
 
-const { div, script, domReady } = require("@saltcorn/markup/tags");
+const { div, script, domReady, code } = require("@saltcorn/markup/tags");
 const { get_state_fields } = require("./utils");
 const { readState } = require("@saltcorn/data/plugin-helper");
+const { mergeIntoWhere } = require("@saltcorn/data/utils");
+const { jsexprToWhere } = require("@saltcorn/data/models/expression");
 const proportionsForm = async (table, autosave) => {
   const fields = await table.getFields();
   const outcome_fields = fields
@@ -47,6 +49,26 @@ const proportionsForm = async (table, autosave) => {
         attributes: {
           options: maybeAddDisabledTitle(factor_fields),
         },
+      },
+      {
+        name: "include_fml",
+        label: "Row inclusion formula",
+        class: "validate-expression",
+        sublabel:
+          "Only include rows where this formula is true. " +
+          "In scope:" +
+          " " +
+          [
+            ...fields.map((f) => f.name),
+            "user",
+            "year",
+            "month",
+            "day",
+            "today()",
+          ]
+            .map((s) => code(s))
+            .join(", "),
+        type: "String",
       },
       {
         name: "null_label",
@@ -154,6 +176,7 @@ const proportionsPlot = async (
     outcome_field,
     statistic,
     factor_field,
+    include_fml,
     style,
     title,
     null_label,
@@ -163,7 +186,8 @@ const proportionsPlot = async (
     label_position = "Legend",
     height = 450,
   },
-  state
+  state,
+  req
 ) => {
   const fields = await table.getFields();
   readState(state, fields);
@@ -180,7 +204,13 @@ const proportionsPlot = async (
   Object.keys(noFactor).forEach((k) => {
     noFactorObj[`mt.${k}`] = noFactor[k];
   });
+  if (include_fml) {
+    const ctx = { ...state, user_id: req?.user?.id || null, user: req.user };
+    let where1 = jsexprToWhere(include_fml, ctx, fields);
+    mergeIntoWhere(noFactorObj, where1 || {});
+  }
   const { where, values } = db.mkWhere(noFactorObj);
+
   const joinTable = isJoin
     ? db.sqlsanitize(factor_field_field.reftable_name)
     : "";
