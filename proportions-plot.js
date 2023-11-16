@@ -128,6 +128,13 @@ const proportionsForm = async (table, autosave) => {
         required: false,
       },
       {
+        name: "center_title",
+        label: "Center title?",
+        type: "Bool",
+        required: false,
+        showIf: { style: "Donut chart" },
+      },
+      {
         name: "height",
         label: "Height",
         type: "Integer",
@@ -211,6 +218,7 @@ const proportionsPlot = async (
     include_fml,
     style,
     title,
+    center_title,
     null_label,
     axis_title,
     upper_limit,
@@ -364,7 +372,17 @@ const proportionsPlot = async (
         ];
 
   let layout = {
-    title,
+    title: center_title
+      ? {
+          text: title,
+          x: 0.5,
+          y: 0.5,
+          xref: "paper",
+          yref: "paper",
+          xanchor: "center",
+          yanchor: "middle",
+        }
+      : title,
     showlegend: label_position === "Legend",
     height: +height,
     autosize: true,
