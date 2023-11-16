@@ -438,7 +438,7 @@ const proportionsPlot = async (
           `setTimeout(()=>Plotly.Plots.resize('${divid}'), 250);
         setTimeout(()=>Plotly.Plots.resize('${divid}'), 500);
         setTimeout(()=>Plotly.Plots.resize('${divid}'), 750);
-        setInterval(()=>Plotly.Plots.resize('${divid}'), 1000);`
+        setInterval(()=>{if($("#${divid}").length) Plotly.Plots.resize('${divid}')}, 1000);`
       )
     )
   );
