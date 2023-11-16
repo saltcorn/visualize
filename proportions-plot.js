@@ -134,6 +134,36 @@ const proportionsForm = async (table, autosave) => {
         required: true,
         default: 450,
       },
+      {
+        input_type: "section_header",
+        label: "Margins",
+      },
+      {
+        name: "mleft",
+        label: "Left (px)",
+        type: "Integer",
+        default: 25,
+        attributes: { asideNext: true },
+      },
+      {
+        name: "mright",
+        label: "Right (px)",
+        type: "Integer",
+        default: 25,
+      },
+      {
+        name: "mtop",
+        label: "Top (px)",
+        type: "Integer",
+        default: 40,
+        attributes: { asideNext: true },
+      },
+      {
+        name: "mbottom",
+        label: "Bottom (px)",
+        type: "Integer",
+        default: 25,
+      },
     ],
   });
 };
@@ -170,6 +200,8 @@ const plotly = (id, factor, selected, isJoin, ...args) =>
     }
   });`;
 
+const or_if_undef = (x, y) => (typeof x === "undefined" ? y : x);
+
 const proportionsPlot = async (
   table,
   {
@@ -185,6 +217,10 @@ const proportionsPlot = async (
     lower_limit,
     label_position = "Legend",
     height = 450,
+    mleft,
+    mright,
+    mtop,
+    mbottom,
   },
   state,
   req
@@ -332,7 +368,14 @@ const proportionsPlot = async (
     showlegend: label_position === "Legend",
     height: +height,
     autosize: true,
-    margin: title ? { pad: 4, t: 40, r: 25 } : { pad: 4, t: 10, r: 25 },
+    //margin: title ? { pad: 4, t: 40, r: 25 } : { pad: 4, t: 10, r: 25 },
+    margin: {
+      pad: 4,
+      t: or_if_undef(mtop, title ? 40 : 10),
+      r: or_if_undef(mright, 25),
+      l: or_if_undef(mleft, undefined),
+      b: or_if_undef(mbottom, undefined),
+    },
     xaxis: {
       automargin: true,
     },
