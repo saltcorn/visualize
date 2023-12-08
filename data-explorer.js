@@ -151,6 +151,7 @@ module.exports = {
   name: "Data Explorer",
   display_state_form: false,
   tableless: true,
+  singleton: true,
   description: "Explore data and create plots",
   get_state_fields: () => [],
   configuration_workflow,
