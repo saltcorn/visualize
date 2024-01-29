@@ -299,9 +299,11 @@ const proportionsPlot = async (
     factor_field_field.attributes &&
     factor_field_field.attributes.options
   ) {
-    var colOpts = factor_field_field.attributes.options
+    const colOptsFromOpts = factor_field_field.attributes.options
       .split(",")
       .map((s) => s.trim());
+    const colOptsFromData = new Set(rows_db.map((r) => r[factor_field]));
+    const colOpts = [...new Set([...colOptsFromOpts, ...colOptsFromData])];
     rows = colOpts.map((factor) => {
       const rowdb = rows_db.find((row) => row[factor_field] == factor);
       if (rowdb) return rowdb;
@@ -314,7 +316,7 @@ const proportionsPlot = async (
   const y = rows.map((r) => (isCount ? r.count : r[stat]));
   const x = rows.map((r) => {
     const v = r[factor_field];
-    if (v === null && null_label) return null_label;
+    if ((v === null || v === "") && null_label) return null_label;
     else return v;
   });
   const customdata = isJoin ? rows.map((r) => r.fkey) : undefined;
