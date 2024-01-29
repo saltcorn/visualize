@@ -77,6 +77,14 @@ const proportionsForm = async (table, autosave) => {
         required: false,
       },
       {
+        name: "show_zero",
+        label: "Show zeros",
+        sublabel: "Show factors with count 0",
+        type: "Bool",
+        required: false,
+        showIf: { statistic: "Count" },
+      },
+      {
         name: "style",
         label: "Style",
         type: "String",
@@ -219,6 +227,7 @@ const proportionsPlot = async (
     style,
     title,
     center_title,
+    show_zero,
     null_label,
     axis_title,
     upper_limit,
@@ -283,7 +292,7 @@ const proportionsPlot = async (
   )}"${selJoin} from ${table.sql_name} mt ${join} ${tail}`;
 
   const rows_db = (await db.query(sql, values)).rows;
-
+  //console.log("rows db", rows_db);
   var rows;
   if (
     !isJoin &&
@@ -299,7 +308,9 @@ const proportionsPlot = async (
       else return { [factor_field]: factor, [isCount ? "count" : stat]: 0 };
     });
   } else rows = rows_db;
-  if (isCount || stat === "count") rows = rows.filter((r) => r.count > 0);
+  //console.log("rows", rows);
+  if (!show_zero && (isCount || stat === "count"))
+    rows = rows.filter((r) => r.count > 0);
   const y = rows.map((r) => (isCount ? r.count : r[stat]));
   const x = rows.map((r) => {
     const v = r[factor_field];
