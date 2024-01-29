@@ -199,7 +199,7 @@ const splitState = (factor, state, fields) => {
   });
   return { noFactor, hasFactor, hasNoFactor };
 };
-const plotly = (id, factor, selected, isJoin, ...args) =>
+const plotly = (id, factor, selected, isJoin, null_label, ...args) =>
   `Plotly.newPlot(document.getElementById("${id}"),${args
     .map(JSON.stringify)
     .join()});
@@ -208,6 +208,7 @@ const plotly = (id, factor, selected, isJoin, ...args) =>
       var label = ${
         isJoin ? "data.points[0].customdata[0]" : "data.points[0].label"
       };
+      if(label==='${null_label}') label = null;
       if((''+label)===(''+${selected ? JSON.stringify(selected) : selected})) {
         unset_state_field("${factor}");
       } else
@@ -444,6 +445,7 @@ const proportionsPlot = async (
           factor_field,
           state[factor_field],
           isJoin,
+          null_label,
           data,
           layout,
           config
