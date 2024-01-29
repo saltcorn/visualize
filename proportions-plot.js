@@ -293,7 +293,6 @@ const proportionsPlot = async (
   )}"${selJoin} from ${table.sql_name} mt ${join} ${tail}`;
 
   const rows_db = (await db.query(sql, values)).rows;
-  //console.log("rows db", rows_db);
   var rows;
   if (
     !isJoin &&
@@ -311,7 +310,6 @@ const proportionsPlot = async (
       else return { [factor_field]: factor, [isCount ? "count" : stat]: 0 };
     });
   } else rows = rows_db;
-  //console.log("rows", rows);
   if (!show_zero && (isCount || stat === "count"))
     rows = rows.filter((r) => r.count > 0);
   const y = rows.map((r) => (isCount ? r.count : r[stat]));
@@ -321,6 +319,7 @@ const proportionsPlot = async (
     else return v;
   });
   const customdata = isJoin ? rows.map((r) => r.fkey) : undefined;
+  const isNull = (x) => x === "null" || x === "" || x === null;
   const data =
     style === "Bar chart"
       ? [
@@ -332,8 +331,9 @@ const proportionsPlot = async (
             marker: {
               color: hasFactor
                 ? rows.map((r) =>
-                    (isJoin ? `${r.fkey}` : r[factor_field]) ===
-                    state[factor_field]
+                    (isJoin ? `${r.fkey}` : r[factor_field]) ==
+                      state[factor_field] ||
+                    (isNull(state[factor_field]) && isNull(r[factor_field]))
                       ? "rgb(31, 119, 180)"
                       : "rgb(150, 150, 150)"
                   )
@@ -353,7 +353,8 @@ const proportionsPlot = async (
               color: hasFactor
                 ? rows.map((r) =>
                     (isJoin ? `${r.fkey}` : r[factor_field]) ===
-                    state[factor_field]
+                      state[factor_field] ||
+                    (isNull(state[factor_field]) && isNull(r[factor_field]))
                       ? "rgb(31, 119, 180)"
                       : "rgb(150, 150, 150)"
                   )
