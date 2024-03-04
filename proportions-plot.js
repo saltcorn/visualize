@@ -218,7 +218,7 @@ const plotly = (id, factor, selected, isJoin, null_label, ...args) =>
 
 const or_if_undef = (x, y) => (typeof x === "undefined" ? y : x);
 
-const proportionsPlot = async (
+const get_proportions_rows = async (
   table,
   {
     outcome_field,
@@ -243,9 +243,8 @@ const proportionsPlot = async (
   state,
   req
 ) => {
-  const fields = await table.getFields();
+  const fields = table.getFields();
   readState(state, fields);
-  const divid = `plot${Math.round(100000 * Math.random())}`;
   const isCount = outcome_field === "Row count";
   const factor_field_field = fields.find((f) => f.name === factor_field);
   if (!factor_field_field)
@@ -312,6 +311,37 @@ const proportionsPlot = async (
   } else rows = rows_db;
   if (!show_zero && (isCount || stat === "count"))
     rows = rows.filter((r) => r.count > 0);
+  return { rows, isCount, isJoin, stat, hasFactor };
+};
+
+const proportionsPlot = async (table, cfg, state, req) => {
+  const {
+    outcome_field,
+    statistic,
+    factor_field,
+    include_fml,
+    style,
+    title,
+    center_title,
+    show_zero,
+    null_label,
+    axis_title,
+    upper_limit,
+    lower_limit,
+    label_position = "Legend",
+    height = 450,
+    mleft,
+    mright,
+    mtop,
+    mbottom,
+  } = cfg;
+  const fields = table.getFields();
+
+  const divid = `plot${Math.round(100000 * Math.random())}`;
+
+  const { rows, isCount, isJoin, stat, hasFactor } = await get_proportions_rows(
+    cfg
+  );
   const y = rows.map((r) => (isCount ? r.count : r[stat]));
   const x = rows.map((r) => {
     const v = r[factor_field];
