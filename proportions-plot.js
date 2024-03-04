@@ -1,4 +1,5 @@
 const Form = require("@saltcorn/data/models/form");
+const Table = require("@saltcorn/data/models/table");
 const db = require("@saltcorn/data/db");
 
 const { div, script, domReady, code } = require("@saltcorn/markup/tags");
@@ -254,6 +255,7 @@ const get_proportions_rows = async (
   const isJoin = factor_field_field.type === "Key";
   const { noFactor, hasFactor } = splitState(factor_field, state, fields);
   const noFactorObj = {};
+  const stat = db.sqlsanitize(statistic || "SUM").toLowerCase();
   Object.keys(noFactor).forEach((k) => {
     noFactorObj[`mt.${k}`] = noFactor[k];
   });
@@ -262,6 +264,36 @@ const get_proportions_rows = async (
     let where1 = jsexprToWhere(include_fml, ctx, fields);
     mergeIntoWhere(noFactorObj, where1 || {});
   }
+  /*if (isJoin) {
+    const joinTable = Table.findOne(factor_field_field.reftable_name);
+    const rows = await joinTable.getJoinedRows({
+      aggregations: {
+        [stat]: {
+          table: table.name,
+          ref: factor_field,
+          field: outcome_field,
+          aggregate: statistic,
+        },
+      },
+    });
+    console.log("new join rows", rows);
+    //return rows;
+  }*/
+
+  if (table.aggregationQuery) {
+    const rows = await table.aggregationQuery(
+      {
+        [stat]: {
+          field: outcome_field,
+          aggregate: statistic,
+        },
+      },
+      { where: noFactorObj, groupBy: [factor_field] }
+    );
+    console.log("new agg rows", rows);
+    return { rows, isCount, isJoin, stat, hasFactor };
+  }
+
   const { where, values } = db.mkWhere(noFactorObj);
 
   const joinTable = isJoin
@@ -277,7 +309,6 @@ const get_proportions_rows = async (
         factor_field_field.attributes.summary_field || "id"
       )}"`
     : `"${db.sqlsanitize(factor_field)}"`;
-  const stat = db.sqlsanitize(statistic || "SUM").toLowerCase();
   const outcome = isCount
     ? `COUNT(*)`
     : `${stat}(mt."${db.sqlsanitize(outcome_field)}")`;
@@ -311,6 +342,7 @@ const get_proportions_rows = async (
   } else rows = rows_db;
   if (!show_zero && (isCount || stat === "count"))
     rows = rows.filter((r) => r.count > 0);
+  console.log("old rows", rows);
   return { rows, isCount, isJoin, stat, hasFactor };
 };
 
@@ -340,7 +372,10 @@ const proportionsPlot = async (table, cfg, state, req) => {
   const divid = `plot${Math.round(100000 * Math.random())}`;
 
   const { rows, isCount, isJoin, stat, hasFactor } = await get_proportions_rows(
-    cfg
+    table,
+    cfg,
+    state,
+    req
   );
   const y = rows.map((r) => (isCount ? r.count : r[stat]));
   const x = rows.map((r) => {
