@@ -290,10 +290,13 @@ const get_proportions_rows = async (
       },
       { where: noFactorObj, groupBy: [factor_field] }
     );
-    console.log("new agg rows", rows);
     if (isJoin && factor_field_field.attributes.summary_field) {
+      const ids = new Set(rows.map((r) => r[factor_field]));
       const joinTable = Table.findOne(factor_field_field.reftable_name);
-      const joinRows = await joinTable.getRows({});
+      const joinRows = await joinTable.getRows({
+        [joinTable.pk_name]: { in: [...ids] },
+      });
+
       const factorFieldMap = {};
       joinRows.forEach((r) => {
         factorFieldMap[r.id] = r[factor_field_field.attributes.summary_field];
