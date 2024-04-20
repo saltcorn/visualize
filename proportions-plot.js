@@ -1,4 +1,5 @@
 const Form = require("@saltcorn/data/models/form");
+const User = require("@saltcorn/data/models/user");
 const db = require("@saltcorn/data/db");
 
 const { div, script, domReady, code } = require("@saltcorn/markup/tags");
@@ -6,6 +7,7 @@ const { get_state_fields } = require("./utils");
 const { readState } = require("@saltcorn/data/plugin-helper");
 const { mergeIntoWhere } = require("@saltcorn/data/utils");
 const { jsexprToWhere } = require("@saltcorn/data/models/expression");
+const { getState } = require("@saltcorn/data/db/state");
 const proportionsForm = async (table, autosave) => {
   const fields = await table.getFields();
   const outcome_fields = fields
@@ -218,6 +220,47 @@ const plotly = (id, factor, selected, isJoin, null_label, ...args) =>
 
 const or_if_undef = (x, y) => (typeof x === "undefined" ? y : x);
 
+const getBsColors = () => {
+  const result = {};
+  const state = getState();
+  if (state.plugin_cfgs) {
+    let anyBsThemeCfg = state.plugin_cfgs["any-bootstrap-theme"];
+    if (!anyBsThemeCfg)
+      anyBsThemeCfg = state.plugin_cfgs["@saltcorn/any-bootstrap-theme"];
+    if (anyBsThemeCfg) {
+      if (anyBsThemeCfg.primary) result.primary = anyBsThemeCfg.primary;
+      if (anyBsThemeCfg.secondary) result.secondary = anyBsThemeCfg.secondary;
+      if (anyBsThemeCfg.success) result.success = anyBsThemeCfg.success;
+      if (anyBsThemeCfg.danger) result.danger = anyBsThemeCfg.danger;
+      if (anyBsThemeCfg.warning) result.warning = anyBsThemeCfg.warning;
+      if (anyBsThemeCfg.info) result.info = anyBsThemeCfg.info;
+    }
+  }
+  return result;
+};
+
+const getDarkBgColor = async (req) => {
+  const state = getState();
+  if (state.plugin_cfgs) {
+    let anyBsThemeCfg = state.plugin_cfgs["any-bootstrap-theme"];
+    if (!anyBsThemeCfg)
+      anyBsThemeCfg = state.plugin_cfgs["@saltcorn/any-bootstrap-theme"];
+    if (anyBsThemeCfg?.dark) {
+      if (req.user?.id) {
+        // does an user overwrite the global setting?
+        const user = await User.findOne({ id: req.user.id });
+        if (user?._attributes?.layout?.config?.mode) {
+          if (user._attributes.layout.config.mode === "dark")
+            return anyBsThemeCfg.dark;
+          else return null;
+        }
+      }
+      if (anyBsThemeCfg.mode === "dark") return anyBsThemeCfg.dark;
+    }
+  }
+  return null;
+};
+
 const proportionsPlot = async (
   table,
   {
@@ -243,6 +286,8 @@ const proportionsPlot = async (
   state,
   req
 ) => {
+  const bsColors = getBsColors();
+  const darkBg = await getDarkBgColor(req);
   const fields = await table.getFields();
   readState(state, fields);
   const divid = `plot${Math.round(100000 * Math.random())}`;
@@ -281,7 +326,7 @@ const proportionsPlot = async (
   const stat = db.sqlsanitize(statistic || "SUM").toLowerCase();
   const outcome = isCount
     ? `COUNT(*)`
-    : `${stat}(mt."${db.sqlsanitize(outcome_field)}")`;
+    : `${stat}(mt."${db.sqlsanitize(outcome_field)}") as ${stat}`;
 
   const selJoin = isJoin ? `, mt."${factor_field}" as fkey` : "";
   const groupBy = isJoin
@@ -334,10 +379,10 @@ const proportionsPlot = async (
                     (isJoin ? `${r.fkey}` : r[factor_field]) ==
                       state[factor_field] ||
                     (isNull(state[factor_field]) && isNull(r[factor_field]))
-                      ? "rgb(31, 119, 180)"
-                      : "rgb(150, 150, 150)"
+                      ? bsColors.primary || "rgb(31, 119, 180)"
+                      : bsColors.secondary || "rgb(150, 150, 150)"
                   )
-                : "rgb(31, 119, 180)",
+                : bsColors.primary || "rgb(31, 119, 180)",
             },
           },
         ]
@@ -355,15 +400,18 @@ const proportionsPlot = async (
                     (isJoin ? `${r.fkey}` : r[factor_field]) ===
                       state[factor_field] ||
                     (isNull(state[factor_field]) && isNull(r[factor_field]))
-                      ? "rgb(31, 119, 180)"
-                      : "rgb(150, 150, 150)"
+                      ? bsColors.primary || "rgb(31, 119, 180)"
+                      : bsColors.secondary || "rgb(150, 150, 150)"
                   )
-                : "rgb(31, 119, 180)",
+                : bsColors.primary || "rgb(31, 119, 180)",
             },
           },
         ]
       : [
           {
+            marker: {
+              colors: Object.values(bsColors),
+            },
             type: "pie",
             labels: x,
             values: y,
@@ -387,6 +435,13 @@ const proportionsPlot = async (
         ];
 
   let layout = {
+    ...(darkBg
+      ? {
+          paper_bgcolor: darkBg,
+          plot_bgcolor: darkBg,
+          font: { color: "#FFFFFF" },
+        }
+      : {}),
     title: center_title
       ? {
           text: title,
