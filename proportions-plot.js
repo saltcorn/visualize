@@ -220,25 +220,6 @@ const plotly = (id, factor, selected, isJoin, null_label, ...args) =>
 
 const or_if_undef = (x, y) => (typeof x === "undefined" ? y : x);
 
-const getBsColors = () => {
-  const result = {};
-  const state = getState();
-  if (state.plugin_cfgs) {
-    let anyBsThemeCfg = state.plugin_cfgs["any-bootstrap-theme"];
-    if (!anyBsThemeCfg)
-      anyBsThemeCfg = state.plugin_cfgs["@saltcorn/any-bootstrap-theme"];
-    if (anyBsThemeCfg) {
-      if (anyBsThemeCfg.primary) result.primary = anyBsThemeCfg.primary;
-      if (anyBsThemeCfg.secondary) result.secondary = anyBsThemeCfg.secondary;
-      if (anyBsThemeCfg.success) result.success = anyBsThemeCfg.success;
-      if (anyBsThemeCfg.danger) result.danger = anyBsThemeCfg.danger;
-      if (anyBsThemeCfg.warning) result.warning = anyBsThemeCfg.warning;
-      if (anyBsThemeCfg.info) result.info = anyBsThemeCfg.info;
-    }
-  }
-  return result;
-};
-
 const getDarkBgColor = async (req) => {
   const state = getState();
   if (state.plugin_cfgs) {
@@ -282,11 +263,13 @@ const proportionsPlot = async (
     mright,
     mtop,
     mbottom,
+    colors = "",
   },
   state,
-  req
+  req,
+  context = {}
 ) => {
-  const bsColors = getBsColors();
+  const parsedColors = context.colors ? context.colors.split(",") : [];
   const darkBg = await getDarkBgColor(req);
   const fields = await table.getFields();
   readState(state, fields);
@@ -379,10 +362,16 @@ const proportionsPlot = async (
                     (isJoin ? `${r.fkey}` : r[factor_field]) ==
                       state[factor_field] ||
                     (isNull(state[factor_field]) && isNull(r[factor_field]))
-                      ? bsColors.primary || "rgb(31, 119, 180)"
-                      : bsColors.secondary || "rgb(150, 150, 150)"
+                      ? parsedColors.length >= 1
+                        ? parsedColors[0]
+                        : "rgb(31, 119, 180)"
+                      : parsedColors.length >= 2
+                      ? parsedColors[1]
+                      : "rgb(150, 150, 150)"
                   )
-                : bsColors.primary || "rgb(31, 119, 180)",
+                : parsedColors.length >= 1
+                ? parsedColors[0]
+                : "rgb(31, 119, 180)",
             },
           },
         ]
@@ -400,17 +389,23 @@ const proportionsPlot = async (
                     (isJoin ? `${r.fkey}` : r[factor_field]) ===
                       state[factor_field] ||
                     (isNull(state[factor_field]) && isNull(r[factor_field]))
-                      ? bsColors.primary || "rgb(31, 119, 180)"
-                      : bsColors.secondary || "rgb(150, 150, 150)"
+                      ? parsedColors.length >= 1
+                        ? parsedColors[0]
+                        : "rgb(31, 119, 180)"
+                      : parsedColors.length >= 2
+                      ? parsedColors[1]
+                      : "rgb(150, 150, 150)"
                   )
-                : bsColors.primary || "rgb(31, 119, 180)",
+                : parsedColors.length >= 1
+                ? parsedColors[0]
+                : "rgb(31, 119, 180)",
             },
           },
         ]
       : [
           {
             marker: {
-              colors: Object.values(bsColors),
+              colors: parsedColors,
             },
             type: "pie",
             labels: x,
