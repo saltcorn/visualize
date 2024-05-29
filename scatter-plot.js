@@ -154,10 +154,10 @@ const scatterPlot = async (
         y,
       };
       if (style === "lines") pt.line = { color };
-      if (style === "markers") pt.markers = { color };
+      if (style === "markers") pt.marker = { color };
       if (style === "lines+markers") {
         pt.line = { color };
-        pt.markers = { color };
+        pt.marker = { color };
       }
       data.push(pt);
     }
