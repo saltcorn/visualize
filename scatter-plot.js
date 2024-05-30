@@ -178,9 +178,9 @@ const scatterPlot = async (
     responsive: true,
   };
   const ytitle =
-    num_plots === "Single"
-      ? fieldToLabel(yfld)
-      : y_title || series.map((s) => s.y_field).join(" ");
+    num_plots === "Multiple"
+      ? y_title || series.map((s) => s.y_field).join(" ")
+      : fieldToLabel(yfld);
   var layout = {
     title,
     showlegend: false,
