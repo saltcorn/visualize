@@ -25,7 +25,7 @@ const configuration_workflow = () =>
 
 const run = async (table_id, viewname, cfg, state, extraArgs) => {
   const table = await Table.findOne({ id: table_id });
-  return await scatterPlot(table, cfg, state);
+  return await scatterPlot(table, cfg, state, extraArgs?.isPreview);
 };
 
 module.exports = {

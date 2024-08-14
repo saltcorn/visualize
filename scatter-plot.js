@@ -133,7 +133,8 @@ const plotly = (id, ...args) =>
 const scatterPlot = async (
   table,
   { x_field, y_field, style, title, y_title, height, num_plots, series },
-  state
+  state,
+  preview
 ) => {
   const fields = await table.getFields();
   readState(state, fields);
@@ -141,7 +142,10 @@ const scatterPlot = async (
   const xfld = fields.find((f) => f.name === x_field);
   const yfld = fields.find((f) => f.name === y_field);
   const where = await stateFieldsToWhere({ fields, state });
-  const rows = await table.getRows(where, { orderBy: x_field });
+  const rows = await table.getRows(where, {
+    orderBy: x_field,
+    limit: preview ? 100 : undefined,
+  });
   const data = [];
   if (num_plots === "Multiple") {
     for (const { y_field, style, color } of series) {
