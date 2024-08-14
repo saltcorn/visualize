@@ -1,6 +1,6 @@
 {
   "name": "@saltcorn/visualize",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Data visualization views plugin",
   "main": "visualize.js",
   "dependencies": {
