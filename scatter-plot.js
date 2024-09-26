@@ -171,7 +171,21 @@ const scatterPlot = async (
   const xfld = fields.find((f) => f.name === x_field);
   const yfld = fields.find((f) => f.name === y_field);
   const where = await stateFieldsToWhere({ fields, state });
-  const rows = await table.getRows(where, {
+  const joinFields = {};
+  const gfield = fields.find((f) => f.name === group_field);
+  let group_by_joinfield = false;
+  if (num_plots === "Group by field") {
+    if (gfield?.is_fkey && gfield.attributes.summary_field) {
+      group_by_joinfield = true;
+      joinFields.__groupjoin = {
+        ref: group_field,
+        target: gfield.attributes.summary_field,
+      };
+    }
+  }
+  const rows = await table.getJoinedRows({
+    where,
+    joinFields,
     orderBy: x_field,
     limit: preview ? 100 : undefined,
   });
@@ -196,16 +210,17 @@ const scatterPlot = async (
       data.push(pt);
     }
   } else if (num_plots === "Group by field") {
-    const gfield = fields.find((f) => f.name === group_field);
-    const diffvals = new Set(rows.map((r) => r[group_field]));
+    const grpfld = group_by_joinfield ? "__groupjoin" : group_field;
+    const diffvals = new Set(rows.map((r) => r[grpfld]));
+
     for (const val of [...diffvals]) {
-      const myRows = rows.filter((r) => r[group_field] === val);
+      const myRows = rows.filter((r) => r[grpfld] === val);
       const y = myRows.map((r) => r[yfld.name]);
       const x = myRows.map((r) => r[xfld.name]);
       const pt = {
         type: "scatter",
         mode: style,
-        name: val,
+        name: val === null ? "null" : val,
         x,
         y,
       };
@@ -219,6 +234,7 @@ const scatterPlot = async (
       mode: style,
       x,
       y,
+      name: yfld.label,
     };
 
     data.push(pt);
