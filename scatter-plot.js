@@ -20,6 +20,9 @@ const scatterForm = async (table, autosave) => {
   const y_fields = fields
     .filter((f) => ["Date", "Float", "Integer"].includes(f.type.name))
     .map((f) => f.name);
+  const group_fields = fields
+    .filter((f) => ["Integer", "String"].includes(f.type.name) || f.is_fkey)
+    .map((f) => f.name);
   const maybeAddDisabledTitle = (os) =>
     autosave ? [{ name: "", label: "Select...", disabled: true }, ...os] : os;
   return new Form({
@@ -52,7 +55,7 @@ const scatterForm = async (table, autosave) => {
         type: "String",
         required: true,
         attributes: {
-          options: ["Single", "Multiple"],
+          options: ["Single", "Multiple", "Group by field"],
         },
       },
       {
@@ -63,7 +66,17 @@ const scatterForm = async (table, autosave) => {
         attributes: {
           options: maybeAddDisabledTitle(y_fields),
         },
-        showIf: { num_plots: "Single" },
+        showIf: { num_plots: ["Single", "Group by field"] },
+      },
+      {
+        name: "group_field",
+        label: "Grouping field",
+        type: "String",
+        required: true,
+        attributes: {
+          options: maybeAddDisabledTitle(group_fields),
+        },
+        showIf: { num_plots: ["Group by field"] },
       },
       {
         name: "style",
@@ -73,7 +86,7 @@ const scatterForm = async (table, autosave) => {
         attributes: {
           options: maybeAddDisabledTitle(["lines", "markers", "lines+markers"]),
         },
-        showIf: { num_plots: "Single" },
+        showIf: { num_plots: ["Single", "Group by field"] },
       },
       {
         name: "y_title",
@@ -132,7 +145,17 @@ const plotly = (id, ...args) =>
 
 const scatterPlot = async (
   table,
-  { x_field, y_field, style, title, y_title, height, num_plots, series },
+  {
+    x_field,
+    y_field,
+    style,
+    title,
+    y_title,
+    group_field,
+    height,
+    num_plots,
+    series,
+  },
   state,
   preview
 ) => {
@@ -154,6 +177,7 @@ const scatterPlot = async (
       const pt = {
         type: "scatter",
         mode: style,
+        name: y_field,
         x,
         y,
       };
@@ -163,6 +187,22 @@ const scatterPlot = async (
         pt.line = { color };
         pt.marker = { color };
       }
+      data.push(pt);
+    }
+  } else if (num_plots === "Group by field") {
+    const gfield = fields.find((f) => f.name === group_field);
+    const diffvals = new Set(rows.map((r) => r[group_field]));
+    for (const val of [...diffvals]) {
+      const myRows = rows.filter((r) => r[group_field] === val);
+      const y = myRows.map((r) => r[yfld.name]);
+      const x = myRows.map((r) => r[xfld.name]);
+      const pt = {
+        type: "scatter",
+        mode: style,
+        name: val,
+        x,
+        y,
+      };
       data.push(pt);
     }
   } else {
