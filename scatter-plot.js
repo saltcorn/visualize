@@ -41,6 +41,11 @@ const scatterForm = async (table, autosave) => {
         default: 450,
       },
       {
+        name: "show_legend",
+        label: "Show legend",
+        type: "Bool",
+      },
+      {
         name: "x_field",
         label: "X axis field",
         type: "String",
@@ -155,6 +160,7 @@ const scatterPlot = async (
     height,
     num_plots,
     series,
+    show_legend,
   },
   state,
   preview
@@ -227,7 +233,7 @@ const scatterPlot = async (
       : fieldToLabel(yfld);
   var layout = {
     title,
-    showlegend: false,
+    showlegend: !!show_legend,
     height: +height,
     margin: title ? { pad: 4, t: 40, r: 25 } : { pad: 4, t: 10, r: 25 },
     xaxis: { title: fieldToLabel(xfld), automargin: true },
