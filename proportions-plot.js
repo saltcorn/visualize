@@ -4,8 +4,11 @@ const db = require("@saltcorn/data/db");
 
 const { div, script, domReady, code } = require("@saltcorn/markup/tags");
 const { get_state_fields } = require("./utils");
-const { readState } = require("@saltcorn/data/plugin-helper");
-const { mergeIntoWhere } = require("@saltcorn/data/utils");
+const {
+  readState,
+  stateFieldsToWhere,
+} = require("@saltcorn/data/plugin-helper");
+const { mergeIntoWhere, prefixFieldsInWhere } = require("@saltcorn/data/utils");
 const { jsexprToWhere } = require("@saltcorn/data/models/expression");
 const { getState } = require("@saltcorn/data/db/state");
 const proportionsForm = async (table, autosave) => {
@@ -193,7 +196,7 @@ const splitState = (factor, state, fields) => {
     if (k === factor && !(v?.in || Array.isArray(v))) hasFactor = true;
     else {
       const field = fields.find((f) => f.name == k);
-      if (field) {
+      if (field || k.startsWith("_fts_")) {
         noFactor[k] = v;
         hasNoFactor = true;
       }
@@ -282,16 +285,18 @@ const proportionsPlot = async (
     );
   const isJoin = factor_field_field.type === "Key";
   const { noFactor, hasFactor } = splitState(factor_field, state, fields);
-  const noFactorObj = {};
-  Object.keys(noFactor).forEach((k) => {
-    noFactorObj[`mt.${k}`] = noFactor[k];
-  });
+  
   if (include_fml) {
     const ctx = { ...state, user_id: req?.user?.id || null, user: req.user };
     let where1 = jsexprToWhere(include_fml, ctx, fields);
-    mergeIntoWhere(noFactorObj, where1 || {});
+    mergeIntoWhere(noFactor, where1 || {});
   }
-  const { where, values } = db.mkWhere(noFactorObj);
+
+  const whObj = prefixFieldsInWhere(
+    stateFieldsToWhere({ fields, table, state: noFactor, prefix: "mt" }),
+    "mt"
+  );
+  const { where, values } = db.mkWhere(whObj);
 
   const joinTable = isJoin
     ? db.sqlsanitize(factor_field_field.reftable_name)
