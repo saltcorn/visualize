@@ -285,17 +285,17 @@ const proportionsPlot = async (
     );
   const isJoin = factor_field_field.type === "Key";
   const { noFactor, hasFactor } = splitState(factor_field, state, fields);
-  
-  if (include_fml) {
-    const ctx = { ...state, user_id: req?.user?.id || null, user: req.user };
-    let where1 = jsexprToWhere(include_fml, ctx, fields);
-    mergeIntoWhere(noFactor, where1 || {});
-  }
-
   const whObj = prefixFieldsInWhere(
     stateFieldsToWhere({ fields, table, state: noFactor, prefix: "mt" }),
     "mt"
   );
+
+  if (include_fml) {
+    const ctx = { ...state, user_id: req?.user?.id || null, user: req.user };
+    let where1 = jsexprToWhere(include_fml, ctx, fields);
+    mergeIntoWhere(whObj, where1 || {});
+  }
+
   const { where, values } = db.mkWhere(whObj);
 
   const joinTable = isJoin
