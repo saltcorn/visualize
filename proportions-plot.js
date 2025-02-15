@@ -437,11 +437,12 @@ const proportionsPlot = async (
   let layout = {
     ...(darkBg
       ? {
-          paper_bgcolor: darkBg,
+          //paper_bgcolor: darkBg,
           plot_bgcolor: darkBg,
           font: { color: "#FFFFFF" },
         }
       : {}),
+    paper_bgcolor: "rgba(0,0,0,0)",
     title: center_title
       ? {
           text: title,
