@@ -21,4 +21,11 @@ const readState = (state, fields) => {
   });
   return state;
 };
-module.exports = { get_state_fields, readState };
+
+const resizer = (divid) =>
+  `setTimeout(()=>{if($("#${divid}").length) Plotly.Plots.resize('${divid}')}, 250);
+setTimeout(()=>{if($("#${divid}").length) Plotly.Plots.resize('${divid}')}, 500);
+setTimeout(()=>{if($("#${divid}").length) Plotly.Plots.resize('${divid}')}, 750);
+setInterval(()=>{if($("#${divid}").length) Plotly.Plots.resize('${divid}')}, 1000);`;
+
+module.exports = { get_state_fields, readState, resizer };

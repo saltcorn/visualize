@@ -3,7 +3,7 @@ const User = require("@saltcorn/data/models/user");
 const db = require("@saltcorn/data/db");
 
 const { div, script, domReady, code } = require("@saltcorn/markup/tags");
-const { get_state_fields } = require("./utils");
+const { get_state_fields, resizer } = require("./utils");
 const {
   readState,
   stateFieldsToWhere,
@@ -14,7 +14,7 @@ const { getState } = require("@saltcorn/data/db/state");
 const proportionsForm = async (table, autosave) => {
   const fields = await table.getFields();
   const outcome_fields = fields
-    .filter((f) => ["Float", "Integer"].includes(f.type.name))
+    .filter((f) => ["Float", "Integer", "Money"].includes(f.type.name))
     .map((f) => f.name);
   const factor_fields = fields
     .filter(
@@ -506,11 +506,7 @@ const proportionsPlot = async (
           data,
           layout,
           config
-        ) +
-          `setTimeout(()=>Plotly.Plots.resize('${divid}'), 250);
-        setTimeout(()=>Plotly.Plots.resize('${divid}'), 500);
-        setTimeout(()=>Plotly.Plots.resize('${divid}'), 750);
-        setInterval(()=>{if($("#${divid}").length) Plotly.Plots.resize('${divid}')}, 1000);`
+        ) + resizer(divid)
       )
     )
   );

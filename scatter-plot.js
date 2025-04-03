@@ -10,15 +10,15 @@ const {
   stateFieldsToWhere,
   readState,
 } = require("@saltcorn/data/plugin-helper");
-const { get_state_fields } = require("./utils");
+const { get_state_fields, resizer } = require("./utils");
 
 const scatterForm = async (table, autosave) => {
   const fields = await table.getFields();
   const x_fields = fields
-    .filter((f) => ["Date", "Float", "Integer"].includes(f.type.name))
+    .filter((f) => ["Date", "Float", "Integer", "Money"].includes(f.type.name))
     .map((f) => f.name);
   const y_fields = fields
-    .filter((f) => ["Date", "Float", "Integer"].includes(f.type.name))
+    .filter((f) => ["Date", "Float", "Integer", "Money"].includes(f.type.name))
     .map((f) => f.name);
   const group_fields = fields
     .filter((f) => ["Integer", "String"].includes(f.type.name) || f.is_fkey)
@@ -257,15 +257,7 @@ const scatterPlot = async (
   };
   return (
     div({ id: divid }) +
-    script(
-      domReady(
-        plotly(divid, data, layout, config) +
-          `setTimeout(()=>Plotly.Plots.resize('${divid}'), 250);
-        setTimeout(()=>Plotly.Plots.resize('${divid}'), 500);
-        setTimeout(()=>Plotly.Plots.resize('${divid}'), 750);
-        setInterval(()=>Plotly.Plots.resize('${divid}'), 1000);`
-      )
-    )
+    script(domReady(plotly(divid, data, layout, config) + resizer(divid)))
   );
 };
 module.exports = { scatterForm, scatterPlot };
