@@ -8,6 +8,7 @@ const { renderForm } = require("@saltcorn/markup");
 const { proportionsForm, proportionsPlot } = require("./proportions-plot");
 const { scatterForm, scatterPlot } = require("./scatter-plot");
 const { div, script, domReady, pre, code } = require("@saltcorn/markup/tags");
+const { getState } = require("@saltcorn/data/db/state");
 
 const configuration_workflow = () =>
   new Workflow({
@@ -143,6 +144,7 @@ const save_as_view = async (table_id, viewname, config, body, { req }) => {
       viewtemplate,
       min_role: 1,
     });
+    await getState().refresh_views()
     return { json: { success: "ok", notify: `View ${newviewname} created` } };
   }
   return { json: { error: "Form incomplete" } };
