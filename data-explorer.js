@@ -7,6 +7,8 @@ const Workflow = require("@saltcorn/data/models/workflow");
 const { renderForm } = require("@saltcorn/markup");
 const { proportionsForm, proportionsPlot } = require("./proportions-plot");
 const { scatterForm, scatterPlot } = require("./scatter-plot");
+const { distributionForm, distributionPlot } = require("./distribution-plot");
+
 const { div, script, domReady, pre, code } = require("@saltcorn/markup/tags");
 const { getState } = require("@saltcorn/data/db/state");
 
@@ -39,6 +41,7 @@ const getForm = async ({ viewname, body }) => {
           { name: "", label: "Select plot type...", disabled: true },
           "Proportion",
           "Relation",
+          "Distribution",
         ],
       },
     },
@@ -54,6 +57,10 @@ const getForm = async ({ viewname, body }) => {
       case "Relation":
         const scatForm = await scatterForm(table, true);
         fields.push(...scatForm.fields);
+        break;
+      case "Distribution":
+        const distForm = await distributionForm(table, true);
+        fields.push(...distForm.fields);
         break;
     }
   }
@@ -110,6 +117,10 @@ const runPost = async (
           plot = await scatterPlot(table, form.values, {});
 
           break;
+        case "Distribution":
+          plot = await distributionPlot(table, form.values, {});
+
+          break;
       }
     } catch (e) {
       plot = pre(code(e.stack));
@@ -135,8 +146,7 @@ const save_as_view = async (table_id, viewname, config, body, { req }) => {
       return { json: { error: "A view with that name already exists" } };
     }
     const tbl = await Table.findOne({ name: table });
-    const viewtemplate =
-      plottype === "Relation" ? "RelationsVis" : "ProportionsVis";
+    const viewtemplate = plottype + "Vis";
     await View.create({
       table_id: tbl.id,
       configuration,
@@ -144,7 +154,7 @@ const save_as_view = async (table_id, viewname, config, body, { req }) => {
       viewtemplate,
       min_role: 1,
     });
-    await getState().refresh_views()
+    await getState().refresh_views();
     return { json: { success: "ok", notify: `View ${newviewname} created` } };
   }
   return { json: { error: "Form incomplete" } };
