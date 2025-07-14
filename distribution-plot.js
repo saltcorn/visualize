@@ -147,9 +147,18 @@ const distributionPlot = async (
       };
     }
   }
+
+  const qfields = [];
+  if (num_plots === "Group by field") {
+    qfields.push(y_field);
+    if (!group_by_joinfield) qfields.push(group_field);
+  } else if (num_plots === "Multiple") {
+    qfields.push(...series.map((s) => s.y_field));
+  } else qfields.push(y_field);
   const rows = await table.getJoinedRows({
     where,
     joinFields,
+    fields: qfields,
     limit: preview ? 100 : undefined,
   });
   const data = [];
