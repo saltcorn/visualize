@@ -18,6 +18,7 @@ module.exports = {
     return [
       require("./proportions")(cfg),
       require("./scatter"),
+      require("./distribution"),
       require("./data-explorer"),
     ];
   },
