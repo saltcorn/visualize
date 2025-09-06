@@ -10,6 +10,13 @@ module.exports = {
           ? "@" + require("./package.json").version
           : ""
       }/plotly.min.js`,
+      onlyViews: [
+        "ProportionsVis",
+        "RelationsVis",
+        "DistributionVis",
+        "Data Explorer",
+        "Pivot table",
+      ],
     },
   ],
   sc_plugin_api_version: 1,
